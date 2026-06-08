@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+.env.*
+n8n/
+*.md
+Dockerfile
+.dockerignore
+railway.json

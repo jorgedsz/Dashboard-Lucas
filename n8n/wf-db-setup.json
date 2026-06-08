@@ -1,0 +1,49 @@
+{
+  "name": "WA · DB Setup",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wa-db-setup",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-dbsetup",
+      "name": "Webhook",
+      "webhookId": "wa-db-setup-hook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE TABLE IF NOT EXISTS contacts (id BIGSERIAL PRIMARY KEY, phone TEXT UNIQUE NOT NULL, name TEXT, email TEXT, company TEXT, tags TEXT[] DEFAULT '{}', source TEXT, owner TEXT, created_at TIMESTAMPTZ DEFAULT now()); CREATE TABLE IF NOT EXISTS conversations (id BIGSERIAL PRIMARY KEY, contact_id BIGINT UNIQUE REFERENCES contacts(id) ON DELETE CASCADE, channel TEXT DEFAULT 'whatsapp', status TEXT DEFAULT 'open', starred BOOLEAN DEFAULT false, unread_count INT DEFAULT 0, last_message TEXT, last_message_at TIMESTAMPTZ, last_direction TEXT, last_status TEXT, last_inbound TIMESTAMPTZ, updated_at TIMESTAMPTZ DEFAULT now()); CREATE TABLE IF NOT EXISTS messages (id BIGSERIAL PRIMARY KEY, conversation_id BIGINT REFERENCES conversations(id) ON DELETE CASCADE, wamid TEXT UNIQUE, direction TEXT, type TEXT DEFAULT 'text', text TEXT, template TEXT, media_url TEXT, status TEXT, created_at TIMESTAMPTZ DEFAULT now()); CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id, created_at); CREATE INDEX IF NOT EXISTS idx_conv_contact ON conversations(contact_id);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [220, 0],
+      "id": "pg-dbsetup",
+      "name": "Create Tables",
+      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Tablas creadas correctamente.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 0],
+      "id": "resp-dbsetup",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Create Tables", "type": "main", "index": 0 }]] },
+    "Create Tables": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -1,0 +1,61 @@
+{
+  "name": "WA · Get Messages",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wa-messages",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-msg",
+      "name": "Webhook",
+      "webhookId": "wa-messages-hook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH r AS (UPDATE conversations SET unread_count = 0 WHERE id = ($1)::bigint RETURNING id) SELECT id, conversation_id, direction, type, text, template, media_url, status, EXTRACT(EPOCH FROM created_at)*1000 AS timestamp FROM messages WHERE conversation_id = ($1)::bigint ORDER BY created_at ASC;",
+        "options": { "queryReplacement": "={{ $json.query.conversationId }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [220, 0],
+      "id": "pg-msg",
+      "name": "Select Messages",
+      "alwaysOutputData": true,
+      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i=>i.json).filter(r=>r && r.id);\nconst messages = rows.map(r=>({id:String(r.id),conversationId:String(r.conversation_id),direction:r.direction,type:r.type||'text',text:r.text||'',template:r.template||null,mediaUrl:r.media_url||null,timestamp:Number(r.timestamp)||0,status:r.status||'received'}));\nreturn [{ json: { messages } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "code-msg",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 0],
+      "id": "resp-msg",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Select Messages", "type": "main", "index": 0 }]] },
+    "Select Messages": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

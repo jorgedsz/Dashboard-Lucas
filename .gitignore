@@ -1,0 +1,18 @@
+# Secretos / entorno (van en Railway, nunca en el repo)
+.env
+.env.*
+!.env.example
+js/config.local.js
+
+# Artefactos de despliegue n8n
+n8n/.id-*
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*

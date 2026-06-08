@@ -1,0 +1,156 @@
+{
+  "name": "WA · Incoming (Meta Webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wa-incoming",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, -160],
+      "id": "wh-verify",
+      "name": "Webhook Verify",
+      "webhookId": "wa-incoming-verify"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c-token",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "={{ $env.WA_VERIFY_TOKEN }}",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [220, -160],
+      "id": "if-token",
+      "name": "Check Token"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, -240],
+      "id": "resp-challenge",
+      "name": "Respond Challenge"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": { "responseCode": 403 }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, -80],
+      "id": "resp-forbidden",
+      "name": "Respond Forbidden"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-incoming",
+        "responseMode": "onReceived",
+        "responseData": "OK",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 160],
+      "id": "wh-messages",
+      "name": "Webhook Messages",
+      "webhookId": "wa-incoming-messages"
+    },
+    {
+      "parameters": {
+        "jsCode": "const out = [];\nconst body = ($input.first().json.body) || {};\nfor (const e of (body.entry||[])) {\n  for (const ch of (e.changes||[])) {\n    const v = ch.value || {};\n    const nameByWa = {};\n    for (const c of (v.contacts||[])) nameByWa[c.wa_id] = (c.profile && c.profile.name) || null;\n    for (const m of (v.messages||[])) {\n      let text='';\n      if (m.type==='text') text=(m.text&&m.text.body)||'';\n      else if (m.type==='button') text=(m.button&&m.button.text)||'';\n      else if (m.type==='interactive') { const it=m.interactive||{}; text=(it.list_reply&&it.list_reply.title)||(it.button_reply&&it.button_reply.title)||''; }\n      else text='['+m.type+']';\n      out.push({json:{kind:'message',phone:m.from,name:nameByWa[m.from]||null,wamid:m.id,ts:Number(m.timestamp)||Math.floor(Date.now()/1000),type:(m.type==='text'?'text':m.type),text}});\n    }\n    for (const s of (v.statuses||[])) out.push({json:{kind:'status',wamid:s.id,status:s.status}});\n  }\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 160],
+      "id": "code-parse",
+      "name": "Parse Payload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c-kind",
+              "leftValue": "={{ $json.kind }}",
+              "rightValue": "message",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [440, 160],
+      "id": "if-kind",
+      "name": "Is Message"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH c AS (INSERT INTO contacts (phone, name) VALUES ($1, $2) ON CONFLICT (phone) DO UPDATE SET name = COALESCE(EXCLUDED.name, contacts.name) RETURNING id), conv AS (INSERT INTO conversations (contact_id, last_message, last_message_at, last_direction, last_status, last_inbound, unread_count, status, updated_at) SELECT c.id, $3, to_timestamp(($4)::double precision), 'in', 'received', to_timestamp(($4)::double precision), 1, 'open', now() FROM c ON CONFLICT (contact_id) DO UPDATE SET last_message = EXCLUDED.last_message, last_message_at = EXCLUDED.last_message_at, last_direction = 'in', last_status = 'received', last_inbound = EXCLUDED.last_inbound, unread_count = conversations.unread_count + 1, status = 'open', updated_at = now() RETURNING id) INSERT INTO messages (conversation_id, wamid, direction, type, text, status, created_at) SELECT conv.id, $5, 'in', $6, $3, 'received', to_timestamp(($4)::double precision) FROM conv ON CONFLICT (wamid) DO NOTHING RETURNING conversation_id;",
+        "options": { "queryReplacement": "={{ [ $json.phone, $json.name, $json.text, $json.ts, $json.wamid, $json.type ] }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [660, 80],
+      "id": "pg-insert",
+      "name": "Insert Message",
+      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE messages SET status = $2 WHERE wamid = $1;",
+        "options": { "queryReplacement": "={{ [ $json.wamid, $json.status ] }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [660, 240],
+      "id": "pg-status",
+      "name": "Update Status",
+      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+    }
+  ],
+  "connections": {
+    "Webhook Verify": { "main": [[{ "node": "Check Token", "type": "main", "index": 0 }]] },
+    "Check Token": {
+      "main": [
+        [{ "node": "Respond Challenge", "type": "main", "index": 0 }],
+        [{ "node": "Respond Forbidden", "type": "main", "index": 0 }]
+      ]
+    },
+    "Webhook Messages": { "main": [[{ "node": "Parse Payload", "type": "main", "index": 0 }]] },
+    "Parse Payload": { "main": [[{ "node": "Is Message", "type": "main", "index": 0 }]] },
+    "Is Message": {
+      "main": [
+        [{ "node": "Insert Message", "type": "main", "index": 0 }],
+        [{ "node": "Update Status", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" }
+}

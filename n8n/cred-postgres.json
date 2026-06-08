@@ -1,0 +1,14 @@
+{
+  "name": "WA Dashboard Postgres",
+  "type": "postgres",
+  "data": {
+    "host": "={{ $env.WA_PGHOST }}",
+    "port": 5432,
+    "database": "={{ $env.WA_PGDATABASE }}",
+    "user": "={{ $env.WA_PGUSER }}",
+    "password": "={{ $env.WA_PGPASSWORD }}",
+    "allowUnauthorizedCerts": true,
+    "sshTunnel": false,
+    "maxConnections": 5
+  }
+}

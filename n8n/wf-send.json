@@ -1,0 +1,67 @@
+{
+  "name": "WA · Send Message",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-send",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-send",
+      "name": "Webhook",
+      "webhookId": "wa-send-hook"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "phoneNumberId": "1117263431478161",
+        "recipientPhoneNumber": "={{ $json.body.to }}",
+        "messageType": "text",
+        "textBody": "={{ $json.body.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1,
+      "position": [220, 0],
+      "id": "wa-send-node",
+      "name": "Send WhatsApp",
+      "credentials": { "whatsAppApi": { "id": "ULnicJG1cKVoq6dg", "name": "WhatsApp account" } }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH ins AS (INSERT INTO messages (conversation_id, wamid, direction, type, text, status, created_at) VALUES (($1)::bigint, $2, 'out', 'text', $3, 'sent', now()) RETURNING id, wamid), upd AS (UPDATE conversations SET last_message = $3, last_message_at = now(), last_direction = 'out', last_status = 'sent', updated_at = now() WHERE id = ($1)::bigint) SELECT id, wamid FROM ins;",
+        "options": { "queryReplacement": "={{ [ $('Webhook').item.json.body.conversationId, $json.messages[0].id, $('Webhook').item.json.body.text ] }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [440, 0],
+      "id": "pg-send",
+      "name": "Save Outgoing",
+      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"id\": String($json.id), \"status\": \"sent\", \"wamid\": $json.wamid } }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 0],
+      "id": "resp-send",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] },
+    "Send WhatsApp": { "main": [[{ "node": "Save Outgoing", "type": "main", "index": 0 }]] },
+    "Save Outgoing": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

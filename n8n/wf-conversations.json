@@ -1,0 +1,61 @@
+{
+  "name": "WA · Get Conversations",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wa-conversations",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-conv",
+      "name": "Webhook",
+      "webhookId": "wa-conversations-hook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT conv.id, c.name, c.phone, c.email, c.company, c.tags, c.source, c.owner, conv.channel, conv.status, conv.starred, conv.unread_count, conv.last_message, conv.last_direction, conv.last_status, EXTRACT(EPOCH FROM conv.last_message_at)*1000 AS last_message_at, EXTRACT(EPOCH FROM conv.last_inbound)*1000 AS last_inbound FROM conversations conv JOIN contacts c ON c.id = conv.contact_id ORDER BY conv.last_message_at DESC NULLS LAST;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [220, 0],
+      "id": "pg-conv",
+      "name": "Select Conversations",
+      "alwaysOutputData": true,
+      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const COLORS = ['#2f6df6','#e2497a','#1aa179','#f59e0b','#7c3aed','#0ea5e9','#ef4444','#10b981'];\nfunction colorFor(n){let h=0;for(let i=0;i<n.length;i++)h=n.charCodeAt(i)+((h<<5)-h);return COLORS[Math.abs(h)%COLORS.length];}\nfunction initials(n){return (n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();}\nconst rows = $input.all().map(i=>i.json).filter(r=>r && r.id);\nconst conversations = rows.map(r=>{const nm=r.name||r.phone||'?';return{id:String(r.id),name:nm,phone:r.phone,avatar:{initials:initials(nm),color:colorFor(nm)},channel:r.channel||'whatsapp',lastMessage:r.last_message||'',lastMessageAt:Number(r.last_message_at)||0,lastDirection:r.last_direction||'in',lastStatus:r.last_status||'received',unreadCount:Number(r.unread_count)||0,starred:!!r.starred,status:r.status||'open',lastInbound:Number(r.last_inbound)||0,contact:{email:r.email||'',company:r.company||'',tags:r.tags||[],source:r.source||'',owner:r.owner||''}};});\nreturn [{ json: { conversations } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "code-conv",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 0],
+      "id": "resp-conv",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Select Conversations", "type": "main", "index": 0 }]] },
+    "Select Conversations": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -26,13 +26,18 @@ aceptan el mismo cuerpo genérico:
 {
   "contactId": "ghl_AbC123",       // requerido — ID de contacto de GHL (clave de identidad, multicanal)
   "channel": "whatsapp",           // requerido — whatsapp | instagram | facebook
-  "text": "contenido del mensaje", // requerido
+  "text": "contenido del mensaje", // requerido para type=text; opcional como caption en media
   "name": "Sofia",                 // opcional (nombre del contacto)
   "phone": "+52 55 4444 3333",     // opcional (para WhatsApp; se normaliza a dígitos)
   "wamid": "id-unico-opcional",    // opcional (dedupe; omítelo y siempre inserta)
   "timestamp": 1780964441,         // opcional (epoch s o ms; por defecto ahora)
-  "type": "text",                  // opcional
-  "status": "sent"                 // opcional (in→received, out→sent por defecto)
+  "type": "text",                  // opcional — text | image | audio | video | document | sticker
+  "status": "sent",                // opcional (in→received, out→sent por defecto)
+
+  // --- adjuntos (image / audio / video / document) ---
+  "mediaUrl": "https://.../archivo.pdf", // URL pública/accesible del adjunto
+  "mediaMime": "application/pdf",        // opcional (alias: mimeType) — refuerza el render por tipo
+  "filename": "cotizacion.pdf"           // opcional (alias: mediaFilename) — nombre mostrado en documentos
 }
 ```
 
@@ -44,6 +49,12 @@ Respuesta: `{ "ok": true, "id": "3", "conversationId": "2" }`.
   icono de la plataforma en cada burbuja y en la lista.
 - El entrante incrementa `unread_count` y actualiza `last_inbound`; el saliente no.
   Ambos crean el contacto/conversación si no existen.
+- **Adjuntos:** si mandas `mediaUrl`, se guarda en `messages.media_url` (+ `media_mime`,
+  `media_filename`). El `type` se infiere a `document` si no lo indicas. El dashboard
+  renderiza imagen, reproductor de audio/video o tarjeta de documento descargable según
+  el tipo. La vista previa en la lista muestra `📷 Imagen`, `🎵 Audio`, `📄 nombre.pdf`, etc.
+  cuando no hay texto. **Requiere correr `wa-db-setup` una vez** para crear las columnas
+  `media_mime` y `media_filename`.
 
 ## Credenciales
 - **Postgres (en uso):** `2W6eREXRp7yllk50` — "WA Postgres Direct".

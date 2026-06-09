@@ -58,6 +58,9 @@
     failed:    '<svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm.8 10.5H7.2V10h1.6v1.5zm0-2.7H7.2V4.5h1.6v4.3z" fill="currentColor"/></svg>'
   };
 
+  // icono genérico de documento (para adjuntos no reproducibles)
+  const DOC_ICON = '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm0 2 4 4h-4V4zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16zm0-6h4v1.5H8V10z" fill="currentColor"/></svg>';
+
   const UI = {
     // ---------- badge de conexión ----------
     renderConnBadge() {
@@ -138,14 +141,36 @@
       this.renderDetails(conv);
     },
 
+    // Renderiza el adjunto según su tipo (imagen, audio, video, documento)
+    mediaNode(m) {
+      const url = m.mediaUrl;
+      if (!url) return '';
+      const u = esc(url);
+      const mime = (m.mediaMime || '').toLowerCase();
+      const type = m.type === 'sticker' ? 'image' : m.type;
+      if (type === 'image' || mime.startsWith('image/')) {
+        return `<div class="msg__media"><a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="" loading="lazy"></a></div>`;
+      }
+      if (type === 'audio' || mime.startsWith('audio/')) {
+        return `<div class="msg__media msg__media--audio"><audio controls preload="none" src="${u}"></audio></div>`;
+      }
+      if (type === 'video' || mime.startsWith('video/')) {
+        return `<div class="msg__media"><video controls preload="metadata" src="${u}"></video></div>`;
+      }
+      // documento / fallback genérico
+      const name = esc(m.mediaFilename || 'Documento');
+      return `<a class="msg__doc" href="${u}" target="_blank" rel="noopener" download>${DOC_ICON}<span class="msg__doc-name">${name}</span></a>`;
+    },
+
     messageNode(m) {
       const out = m.direction === 'out';
       const cm = chMeta(m.channel);
-      const node = el('div', 'msg ' + (out ? 'msg--out' : 'msg--in') + (m.type === 'template' ? ' msg--template' : '') + (m.status === 'failed' ? ' msg--failed' : ''));
+      const hasMedia = !!m.mediaUrl;
+      const node = el('div', 'msg ' + (out ? 'msg--out' : 'msg--in') + (m.type === 'template' ? ' msg--template' : '') + (hasMedia ? ' msg--media' : '') + (m.status === 'failed' ? ' msg--failed' : ''));
       let inner = '';
       if (m.type === 'template') inner += `<div class="msg__tplflag">Plantilla · ${esc(m.template || '')}</div>`;
-      if (m.mediaUrl) inner += `<div class="msg__media"><img src="${esc(m.mediaUrl)}" alt=""></div>`;
-      inner += `<div class="msg__text">${esc(m.text)}</div>`;
+      if (hasMedia) inner += this.mediaNode(m);
+      if (m.text) inner += `<div class="msg__text">${esc(m.text)}</div>`;
       inner += `<div class="msg__meta"><span class="msg__chan" style="color:${cm.color}" title="${cm.label}">${cm.icon}</span><span class="msg__time">${timeShort(m.timestamp)}</span>`;
       if (out) inner += `<span class="msg__tick ${m.status === 'read' ? 'read' : ''}">${TICK[m.status] || TICK.sent}</span>`;
       inner += `</div>`;

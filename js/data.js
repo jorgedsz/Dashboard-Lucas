@@ -40,7 +40,10 @@
         { dir: 'in',  text: 'Hola, vi su anuncio de los vestidos de verano 😍', at: now - 3 * hour },
         { dir: 'out', text: '¡Hola María! Gracias por escribirnos. Sí, tenemos la nueva colección disponible. ¿Buscas algún color en particular?', at: now - 3 * hour + 4 * min, status: 'read' },
         { dir: 'in',  text: 'Me gusta el azul rey, ¿tienen talla M?', at: now - 2 * hour },
-        { dir: 'out', text: 'Sí, tenemos talla M en azul rey. El precio es $899 MXN. ¿Te gustaría apartarlo?', at: now - 2 * hour + 2 * min, status: 'read' },
+        { dir: 'out', text: 'Sí, tenemos talla M en azul rey. Te mando una foto:', at: now - 2 * hour + 1 * min, status: 'read' },
+        { dir: 'out', text: '', type: 'image', mediaUrl: 'https://picsum.photos/seed/vestido/320/220', mediaMime: 'image/jpeg', at: now - 2 * hour + 2 * min, status: 'read' },
+        { dir: 'in',  text: '', type: 'audio', mediaUrl: 'https://www.w3schools.com/html/horse.mp3', mediaMime: 'audio/mpeg', at: now - 30 * min },
+        { dir: 'out', text: 'Aquí tienes la cotización formal 👇', type: 'document', mediaUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf', filename: 'cotizacion_vestido.pdf', mediaMime: 'application/pdf', at: now - 20 * min, status: 'delivered' },
         { dir: 'in',  text: 'Perfecto, ¿cómo hago el apartado?', at: now - 4 * min }
       ]
     },
@@ -101,6 +104,9 @@
       type: m.type || 'text',
       text: m.text,
       template: m.template || null,
+      mediaUrl: m.mediaUrl || null,
+      mediaMime: m.mediaMime || null,
+      mediaFilename: m.filename || null,
       timestamp: m.at,
       status: m.dir === 'out' ? (m.status || 'sent') : 'received',
       channel: channel

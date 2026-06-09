@@ -18,7 +18,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH r AS (UPDATE conversations SET unread_count = 0 WHERE id = ($1)::bigint RETURNING id) SELECT id, conversation_id, direction, type, text, template, media_url, status, channel, EXTRACT(EPOCH FROM created_at)*1000 AS timestamp FROM messages WHERE conversation_id = ($1)::bigint ORDER BY created_at ASC;",
+        "query": "WITH r AS (UPDATE conversations SET unread_count = 0 WHERE id = ($1)::bigint RETURNING id) SELECT id, conversation_id, direction, type, text, template, media_url, media_mime, media_filename, status, channel, EXTRACT(EPOCH FROM created_at)*1000 AS timestamp FROM messages WHERE conversation_id = ($1)::bigint ORDER BY created_at ASC;",
         "options": { "queryReplacement": "={{ $json.query.conversationId }}" }
       },
       "type": "n8n-nodes-base.postgres",
@@ -31,7 +31,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(i=>i.json).filter(r=>r && r.id);\nconst messages = rows.map(r=>({id:String(r.id),conversationId:String(r.conversation_id),direction:r.direction,type:r.type||'text',text:r.text||'',template:r.template||null,mediaUrl:r.media_url||null,timestamp:Number(r.timestamp)||0,status:r.status||'received',channel:r.channel||'whatsapp'}));\nreturn [{ json: { messages } }];"
+        "jsCode": "const rows = $input.all().map(i=>i.json).filter(r=>r && r.id);\nconst messages = rows.map(r=>({id:String(r.id),conversationId:String(r.conversation_id),direction:r.direction,type:r.type||'text',text:r.text||'',template:r.template||null,mediaUrl:r.media_url||null,mediaMime:r.media_mime||null,mediaFilename:r.media_filename||null,timestamp:Number(r.timestamp)||0,status:r.status||'received',channel:r.channel||'whatsapp'}));\nreturn [{ json: { messages } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

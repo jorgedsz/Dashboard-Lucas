@@ -89,8 +89,11 @@
   const conversations = [];
   const messagesByConv = {};
 
+  const CHAN_BY_NAME = { 'Ana Lucía Torres': 'instagram', 'Roberto Méndez': 'facebook', 'Fernanda Ríos': 'instagram' };
+
   CONTACTS.forEach(c => {
     const id = 'c' + (cId++);
+    const channel = CHAN_BY_NAME[c.name] || 'whatsapp';
     const msgs = c.messages.map(m => ({
       id: 'm' + (mId++),
       conversationId: id,
@@ -99,7 +102,8 @@
       text: m.text,
       template: m.template || null,
       timestamp: m.at,
-      status: m.dir === 'out' ? (m.status || 'sent') : 'received'
+      status: m.dir === 'out' ? (m.status || 'sent') : 'received',
+      channel: channel
     }));
     const last = msgs[msgs.length - 1];
     const unread = msgs.filter(m => m.direction === 'in' && m.timestamp > (now - 6 * hour)).length;
@@ -109,7 +113,8 @@
       name: c.name,
       phone: c.phone,
       avatar: { initials: initials(c.name), color: colorFor(c.name) },
-      channel: 'whatsapp',
+      channel: channel,
+      contactId: 'demo_' + id,
       lastMessage: last.text,
       lastMessageAt: last.timestamp,
       lastDirection: last.direction,

@@ -71,6 +71,7 @@
         type: opts.template ? 'template' : 'text',
         text: text,
         template: opts.template || null,
+        channel: conv.channel,
         timestamp: Date.now(),
         status: 'sent'
       };
@@ -81,7 +82,9 @@
       // Payload que recibe n8n -> WhatsApp Cloud API
       const payload = {
         conversationId: conv.id,
-        to: conv.phone.replace(/[^\d]/g, ''),
+        contactId: conv.contactId || null,
+        channel: conv.channel,
+        to: conv.phone ? conv.phone.replace(/[^\d]/g, '') : null,
         type: optimistic.type,
         text: text,
         template: opts.template ? { name: opts.template, params: opts.params || [] } : null
@@ -121,6 +124,7 @@
         direction: 'in',
         type: 'text',
         text: samples[Math.floor(Math.random() * samples.length)],
+        channel: conv.channel,
         timestamp: Date.now(),
         status: 'received'
       };

@@ -5,6 +5,24 @@
   'use strict';
 
   const $ = sel => document.querySelector(sel);
+
+  // ---------- canales (plataformas) ----------
+  const CHANNELS = {
+    whatsapp: {
+      label: 'WhatsApp', color: '#25d366', bg: '#25d366',
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3.1 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg>'
+    },
+    instagram: {
+      label: 'Instagram', color: '#e1306c',
+      bg: 'radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 70%, #285AEB 100%)',
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.3 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.3 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.3-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.1-4.9c.1-1.2.3-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4C8.4 2.2 8.8 2.2 12 2.2zm0 3.2A6.4 6.4 0 1018.4 12 6.4 6.4 0 0012 5.4zm0 2.2A4.2 4.2 0 117.8 12 4.2 4.2 0 0112 7.6zm6.6-2.3a1.5 1.5 0 10-1.5 1.5 1.5 1.5 0 001.5-1.5z"/></svg>'
+    },
+    facebook: {
+      label: 'Facebook', color: '#0084ff', bg: '#0084ff',
+      icon: '<svg viewBox="0 0 24 24"><path d="M12 2C6.3 2 2 6.2 2 11.6c0 2.9 1.3 5.4 3.4 7.1V22l3.1-1.7c.8.2 1.7.3 2.5.3 5.7 0 10-4.2 10-9.6S17.7 2 12 2zm1 12.9-2.6-2.7-4.9 2.7 5.4-5.7 2.6 2.7 4.8-2.7-5.3 5.7z"/></svg>'
+    }
+  };
+  const chMeta = ch => CHANNELS[ch] || CHANNELS.whatsapp;
   const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -60,12 +78,13 @@
       }
       list.forEach(c => {
         const active = c.id === Store.activeId;
+        const cm = chMeta(c.channel);
         const node = el('div', 'conv' + (active ? ' conv--active' : '') + (c.unreadCount > 0 ? ' conv--unread' : ''));
         const tick = c.lastDirection === 'out' ? `<span class="tick ${c.lastStatus === 'read' ? 'read' : ''}">${TICK[c.lastStatus] || TICK.sent}</span> ` : '';
         node.innerHTML = `
           <div class="conv__avatar">
             <div class="avatar" style="background:${c.avatar.color}">${esc(c.avatar.initials)}</div>
-            <span class="conv__chan"><svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.3 5L2 22l5.2-1.3c1.4.8 3.1 1.2 4.8 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg></span>
+            <span class="conv__chan" style="background:${cm.bg}">${cm.icon}</span>
           </div>
           <div class="conv__main">
             <div class="conv__top">
@@ -93,7 +112,10 @@
       $('#threadAvatar').textContent = conv.avatar.initials;
       $('#threadAvatar').style.background = conv.avatar.color;
       $('#threadName').textContent = conv.name;
-      $('#threadPhone').textContent = conv.phone;
+      $('#threadPhone').textContent = conv.phone || (conv.contactId ? 'ID ' + conv.contactId : '');
+      const hcm = chMeta(conv.channel);
+      const chanEl = $('#threadChan');
+      if (chanEl) { chanEl.innerHTML = hcm.icon + ' ' + hcm.label; chanEl.style.color = hcm.color; }
 
       // mensajes con separadores de fecha
       const box = $('#messages');
@@ -118,12 +140,13 @@
 
     messageNode(m) {
       const out = m.direction === 'out';
+      const cm = chMeta(m.channel);
       const node = el('div', 'msg ' + (out ? 'msg--out' : 'msg--in') + (m.type === 'template' ? ' msg--template' : '') + (m.status === 'failed' ? ' msg--failed' : ''));
       let inner = '';
       if (m.type === 'template') inner += `<div class="msg__tplflag">Plantilla · ${esc(m.template || '')}</div>`;
       if (m.mediaUrl) inner += `<div class="msg__media"><img src="${esc(m.mediaUrl)}" alt=""></div>`;
       inner += `<div class="msg__text">${esc(m.text)}</div>`;
-      inner += `<div class="msg__meta"><span class="msg__time">${timeShort(m.timestamp)}</span>`;
+      inner += `<div class="msg__meta"><span class="msg__chan" style="color:${cm.color}" title="${cm.label}">${cm.icon}</span><span class="msg__time">${timeShort(m.timestamp)}</span>`;
       if (out) inner += `<span class="msg__tick ${m.status === 'read' ? 'read' : ''}">${TICK[m.status] || TICK.sent}</span>`;
       inner += `</div>`;
       node.innerHTML = inner;

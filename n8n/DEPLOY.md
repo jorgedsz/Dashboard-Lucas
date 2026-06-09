@@ -24,10 +24,12 @@ aceptan el mismo cuerpo genérico:
 
 ```json
 {
-  "phone": "+52 55 4444 3333",   // requerido (se normaliza a solo dígitos)
+  "contactId": "ghl_AbC123",       // requerido — ID de contacto de GHL (clave de identidad, multicanal)
+  "channel": "whatsapp",           // requerido — whatsapp | instagram | facebook
   "text": "contenido del mensaje", // requerido
-  "name": "Lucas Demo",            // opcional (nombre del contacto)
-  "wamid": "id-unico-opcional",    // opcional (para deduplicar; omítelo y siempre inserta)
+  "name": "Sofia",                 // opcional (nombre del contacto)
+  "phone": "+52 55 4444 3333",     // opcional (para WhatsApp; se normaliza a dígitos)
+  "wamid": "id-unico-opcional",    // opcional (dedupe; omítelo y siempre inserta)
   "timestamp": 1780964441,         // opcional (epoch s o ms; por defecto ahora)
   "type": "text",                  // opcional
   "status": "sent"                 // opcional (in→received, out→sent por defecto)
@@ -36,8 +38,12 @@ aceptan el mismo cuerpo genérico:
 
 Respuesta: `{ "ok": true, "id": "3", "conversationId": "2" }`.
 
-Diferencias automáticas: el entrante incrementa `unread_count` y actualiza
-`last_inbound`; el saliente no. Ambos crean el contacto/conversación si no existen.
+- **Identidad por `contactId` de GHL** (no por teléfono) → unifica WhatsApp, Instagram y
+  Facebook bajo el mismo contacto. El teléfono es opcional.
+- El **`channel`** se guarda por mensaje y por conversación; el dashboard muestra el
+  icono de la plataforma en cada burbuja y en la lista.
+- El entrante incrementa `unread_count` y actualiza `last_inbound`; el saliente no.
+  Ambos crean el contacto/conversación si no existen.
 
 ## Credenciales
 - **Postgres (en uso):** `2W6eREXRp7yllk50` — "WA Postgres Direct".

@@ -23,7 +23,7 @@
             {
               "id": "c-token",
               "leftValue": "={{ $json.query['hub.verify_token'] }}",
-              "rightValue": "={{ $env.WA_VERIFY_TOKEN }}",
+              "rightValue": "REEMPLAZA_CON_TU_VERIFY_TOKEN",
               "operator": { "type": "string", "operation": "equals" }
             }
           ],
@@ -119,7 +119,7 @@
       "position": [660, 80],
       "id": "pg-insert",
       "name": "Insert Message",
-      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
     },
     {
       "parameters": {
@@ -132,7 +132,7 @@
       "position": [660, 240],
       "id": "pg-status",
       "name": "Update Status",
-      "credentials": { "postgres": { "id": "ugbph1jdfP34lfPg", "name": "WA Dashboard Postgres" } }
+      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
     }
   ],
   "connections": {

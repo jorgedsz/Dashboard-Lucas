@@ -1,12 +1,13 @@
 {
-  "name": "WA Dashboard Postgres",
+  "_comment": "Plantilla de credencial Postgres para n8n (valores DIRECTOS, no env vars). Rellena con tu DATABASE_PUBLIC_URL de Railway. NO commitear con la contraseña real.",
+  "name": "WA Postgres Direct",
   "type": "postgres",
   "data": {
-    "host": "={{ $env.WA_PGHOST }}",
-    "port": 5432,
-    "database": "={{ $env.WA_PGDATABASE }}",
-    "user": "={{ $env.WA_PGUSER }}",
-    "password": "={{ $env.WA_PGPASSWORD }}",
+    "host": "xxxx.proxy.rlwy.net",
+    "port": 44707,
+    "database": "railway",
+    "user": "postgres",
+    "password": "REEMPLAZA_CON_TU_PGPASSWORD",
     "allowUnauthorizedCerts": true,
     "sshTunnel": false,
     "maxConnections": 5

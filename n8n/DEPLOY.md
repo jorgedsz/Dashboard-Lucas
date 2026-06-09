@@ -1,33 +1,46 @@
 # Despliegue n8n — WhatsApp Dashboard
 
 n8n: https://primary-production-b7ae.up.railway.app
+Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de Meta probados).
 
 ## Workflows desplegados (activos)
 | Workflow | ID | Webhook (producción) |
 |---|---|---|
-| WA · Incoming (Meta) | GHs0GyJLj6YZMT2a | `/webhook/wa-incoming` (GET verify + POST mensajes) |
+| WA · Incoming (Meta) | GHs0GyJLj6YZMT2a | `/webhook/wa-incoming` (GET verify + POST mensajes/estados) |
 | WA · Send Message | Sw4OERszWK43Ra2N | `/webhook/wa-send` (POST) |
 | WA · Get Conversations | hFnujBOqdNAFjiXA | `/webhook/wa-conversations` (GET) |
-| WA · Get Messages | jG87Czw3OAhA6CCg | `/webhook/wa-messages` (GET) |
+| WA · Get Messages | jG87Czw3OAhA6CCg | `/webhook/wa-messages` (GET ?conversationId=) |
 | WA · DB Setup | R1VYzFowxtfihDNb | `/webhook/wa-db-setup` (GET, un solo uso) |
 
 ## Credenciales
-- Postgres (n8n): `ugbph1jdfP34lfPg` — lee de $env (WA_PGHOST/DATABASE/USER/PASSWORD)
-- WhatsApp Business Cloud: `ULnicJG1cKVoq6dg` — Phone Number ID `1117263431478161`
+- **Postgres (en uso):** `2W6eREXRp7yllk50` — "WA Postgres Direct".
+  Valores **directos** (no env vars), apuntando al **host público** del Postgres de Railway.
+- WhatsApp Business Cloud: `ULnicJG1cKVoq6dg` — Phone Number ID `1117263431478161`.
 
-## Variables de entorno requeridas en el servicio n8n (Railway)
-```
-N8N_BLOCK_ENV_ACCESS_IN_NODE = false   # CRÍTICO: desbloquea $env en nodos/credenciales
-WA_PGHOST      = ${{Postgres.PGHOST}}
-WA_PGDATABASE  = ${{Postgres.PGDATABASE}}
-WA_PGUSER      = ${{Postgres.PGUSER}}
-WA_PGPASSWORD  = ${{Postgres.PGPASSWORD}}
-WA_VERIFY_TOKEN = <define-un-token-en-railway>   # NO commitear el valor real
-```
+## Decisiones / lecciones del despliegue
+1. **No usamos variables de entorno de n8n.** Esta imagen tiene
+   `N8N_BLOCK_ENV_ACCESS_IN_NODE` activo y bloquea `$env` en nodos y credenciales
+   (`access to env vars denied`). Poner el flag en `false` no surtió efecto.
+   → Los valores van **directos** en la credencial (cifrados dentro de n8n, nunca en el repo).
+2. **Host público, no interno.** `postgres.railway.internal` resolvía a **otra** base
+   (la interna de la plantilla de n8n) → `password authentication failed`.
+   → Se usa el **host público** del Postgres: `DATABASE_PUBLIC_URL`
+   (`xxxx.proxy.rlwy.net:PUERTO`). Conecta sin ambigüedad.
+3. **Verify token hardcodeado** en el nodo "Check Token" del workflow Incoming
+   (porque `$env` está bloqueado). En el repo va un **placeholder**
+   (`REEMPLAZA_CON_TU_VERIFY_TOKEN`); el valor real solo vive en el workflow desplegado.
 
-## Pasos pendientes
-1. Crear servicio Postgres en el mismo proyecto de Railway.
-2. Añadir las 6 variables al servicio n8n (n8n se redespliega solo).
-3. Ejecutar DB Setup: GET /webhook/wa-db-setup (crea las tablas).
-4. Configurar webhook en Meta: callback `/webhook/wa-incoming`, verify token = WA_VERIFY_TOKEN, suscribir campo `messages`.
-5. Dashboard → Ajustes → modo LIVE, pegar las 3 URLs.
+> Si reimportas los JSON de este repo en otra instancia de n8n, hay que:
+> (a) crear/asignar una credencial Postgres con los valores directos, y
+> (b) poner tu verify token real en el nodo "Check Token".
+
+## Configurar el webhook en Meta
+- Callback URL: `https://primary-production-b7ae.up.railway.app/webhook/wa-incoming`
+- Verify token: el valor real configurado en el nodo "Check Token".
+- Suscribir el campo **messages**.
+
+## Dashboard
+Ajustes → modo **LIVE** con estas URLs (ya pre-cargadas en `js/config.js`):
+- Enviar: `/webhook/wa-send`
+- Conversaciones: `/webhook/wa-conversations`
+- Mensajes: `/webhook/wa-messages`

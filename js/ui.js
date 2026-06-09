@@ -73,11 +73,11 @@
     renderList() {
       const box = $('#convList');
       const list = Store.visibleConversations();
-      box.innerHTML = '';
       if (!list.length) {
-        box.appendChild(el('div', 'list__body-empty', '<p style="padding:30px;text-align:center;color:#9aa3b2">Sin conversaciones</p>'));
+        box.innerHTML = '<div class="list__body-empty"><p style="padding:30px;text-align:center;color:#9aa3b2">Sin conversaciones</p></div>';
         return;
       }
+      const frag = document.createDocumentFragment();
       list.forEach(c => {
         const active = c.id === Store.activeId;
         const cm = chMeta(c.channel);
@@ -99,8 +99,9 @@
             </div>
           </div>`;
         node.addEventListener('click', () => global.App.openConversation(c.id));
-        box.appendChild(node);
+        frag.appendChild(node);
       });
+      box.replaceChildren(frag);
     },
 
     // ---------- hilo de mensajes ----------
@@ -121,17 +122,25 @@
 
       // mensajes con separadores de fecha
       const box = $('#messages');
-      box.innerHTML = '';
+      // ¿conviene saltar al fondo? Solo al abrir otra conversación o si el
+      // usuario ya estaba abajo (para no interrumpir su lectura en cada poll).
+      const convChanged = this._threadConvId !== conv.id;
+      const nearBottom = (box.scrollHeight - box.scrollTop - box.clientHeight) < 90;
+      const prevScroll = box.scrollTop;
+      const frag = document.createDocumentFragment();
       let lastDay = null;
       Store.activeMessages().forEach(m => {
         const day = new Date(m.timestamp).toDateString();
         if (day !== lastDay) {
-          box.appendChild(el('div', 'date-sep', dateLabel(m.timestamp)));
+          frag.appendChild(el('div', 'date-sep', dateLabel(m.timestamp)));
           lastDay = day;
         }
-        box.appendChild(this.messageNode(m));
+        frag.appendChild(this.messageNode(m));
       });
-      box.scrollTop = box.scrollHeight;
+      box.replaceChildren(frag);
+      if (convChanged || nearBottom) box.scrollTop = box.scrollHeight;
+      else box.scrollTop = prevScroll;
+      this._threadConvId = conv.id;
 
       // aviso ventana 24h (solo si el último entrante fue hace +24h)
       const outOfWindow = conv.lastInbound && (Date.now() - conv.lastInbound) > 24 * 3600 * 1000;
@@ -154,7 +163,7 @@
       const name = esc(m.mediaFilename || '');
       const data = `data-url="${u}" data-mime="${esc(mime)}" data-name="${name}"`;
       if (type === 'image' || mime.startsWith('image/')) {
-        return `<div class="msg__media js-media-open" data-mtype="image" ${data}><img src="${u}" alt="" loading="lazy"></div>`;
+        return `<div class="msg__media js-media-open" data-mtype="image" ${data}><img src="${u}" alt="" loading="lazy" decoding="async"></div>`;
       }
       if (type === 'audio' || mime.startsWith('audio/')) {
         return `<div class="msg__media msg__media--audio"><audio controls preload="none" src="${u}"></audio></div>`;

@@ -35,6 +35,7 @@
       try {
         const data = await Api.loadConversations();
         Store.setData(data.conversations, data.messagesByConv, data.templates);
+        this._listSig = this.convSig(Store.conversations);
         UI.renderList();
         UI.renderTemplates();
         if (Store.activeId) UI.renderThread();
@@ -54,6 +55,8 @@
         try { Store.messagesByConv[id] = await Api.loadMessages(id); }
         catch (e) { UI.toast('No se pudieron cargar los mensajes'); }
       }
+      const c = Store.activeConversation();
+      this._activeStatus = c ? c.lastStatus : null;
       UI.renderList();
       UI.renderThread();
     },
@@ -129,25 +132,51 @@
       this.send(filled, { template: tpl.name });
     },
 
-    // ---------- polling ----------
+    // ---------- polling (incremental: re-renderiza solo si hay cambios) ----------
     startPolling() {
       clearInterval(pollTimer);
       const ms = Number(Store.settings.pollInterval) || 0;
       if (ms <= 0) return;
-      pollTimer = setInterval(async () => {
-        const res = await Api.poll();
-        if (res && res.conversations) {
-          // fusiona contadores / últimos mensajes
-          Store.conversations = res.conversations;
-          UI.renderList();
-          if (Store.activeId) {
+      pollTimer = setInterval(() => { this.pollOnce(); }, ms);
+    },
+
+    // firma compacta de la lista para detectar cambios reales
+    convSig(list) {
+      let s = '';
+      for (const c of list) s += c.id + ':' + (c.lastMessageAt || 0) + ':' + (c.unreadCount || 0) + ':' + (c.lastStatus || '') + '|';
+      return s;
+    },
+
+    async pollOnce() {
+      const res = await Api.poll();
+      if (!res || !res.conversations) return;
+      const convs = res.conversations;
+
+      // 1) Lista: re-renderiza solo si algo cambió de verdad
+      const sig = this.convSig(convs);
+      if (sig !== this._listSig) {
+        Store.conversations = convs;
+        this._listSig = sig;
+        UI.renderList();
+      }
+
+      // 2) Hilo activo: recarga mensajes solo si esa conversación tiene novedades
+      if (Store.activeId) {
+        const active = convs.find(c => c.id === Store.activeId);
+        if (active) {
+          const msgs = Store.messagesByConv[Store.activeId] || [];
+          const localLast = msgs.length ? msgs[msgs.length - 1].timestamp : 0;
+          const hasNew = (active.lastMessageAt || 0) > localLast;
+          const statusChanged = active.lastStatus !== this._activeStatus;
+          if (hasNew || statusChanged) {
             try {
               Store.messagesByConv[Store.activeId] = await Api.loadMessages(Store.activeId);
+              this._activeStatus = active.lastStatus;
               UI.renderThread();
             } catch (_) {}
           }
         }
-      }, ms);
+      }
     },
 
     // ---------- ajustes ----------

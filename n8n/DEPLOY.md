@@ -11,6 +11,33 @@ Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de M
 | WA · Get Conversations | hFnujBOqdNAFjiXA | `/webhook/wa-conversations` (GET) |
 | WA · Get Messages | jG87Czw3OAhA6CCg | `/webhook/wa-messages` (GET ?conversationId=) |
 | WA · DB Setup | R1VYzFowxtfihDNb | `/webhook/wa-db-setup` (GET, un solo uso) |
+| WA · Save Inbound | UkBXFr1SyiAozJPV | `/webhook/wa-save-in` (POST) — guardar mensaje entrante a mano |
+| WA · Save Outbound | INdmGsXWSafVvjJv | `/webhook/wa-save-out` (POST) — guardar mensaje saliente a mano |
+
+## Guardado manual de mensajes (endpoints genéricos)
+
+No envían nada por WhatsApp: solo registran en Postgres. Los llamas tú desde
+tus propios flujos de n8n (nodo HTTP Request) o desde donde quieras.
+
+**POST `/webhook/wa-save-in`** (entrante) y **POST `/webhook/wa-save-out`** (saliente)
+aceptan el mismo cuerpo genérico:
+
+```json
+{
+  "phone": "+52 55 4444 3333",   // requerido (se normaliza a solo dígitos)
+  "text": "contenido del mensaje", // requerido
+  "name": "Lucas Demo",            // opcional (nombre del contacto)
+  "wamid": "id-unico-opcional",    // opcional (para deduplicar; omítelo y siempre inserta)
+  "timestamp": 1780964441,         // opcional (epoch s o ms; por defecto ahora)
+  "type": "text",                  // opcional
+  "status": "sent"                 // opcional (in→received, out→sent por defecto)
+}
+```
+
+Respuesta: `{ "ok": true, "id": "3", "conversationId": "2" }`.
+
+Diferencias automáticas: el entrante incrementa `unread_count` y actualiza
+`last_inbound`; el saliente no. Ambos crean el contacto/conversación si no existen.
 
 ## Credenciales
 - **Postgres (en uso):** `2W6eREXRp7yllk50` — "WA Postgres Direct".

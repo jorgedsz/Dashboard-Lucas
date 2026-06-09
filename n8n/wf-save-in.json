@@ -1,0 +1,72 @@
+{
+  "name": "WA · Save Inbound",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-save-in",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-savein",
+      "name": "Webhook",
+      "webhookId": "wa-save-in-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = ($input.first().json.body) || {};\nlet ts = b.timestamp;\nif (ts == null || ts === '') ts = Math.floor(Date.now()/1000);\nelse { ts = Number(ts); if (ts > 1e12) ts = Math.floor(ts/1000); }\nconst phone = String(b.phone||'').replace(/[^\\d]/g,'');\nreturn [{ json: { phone, name: b.name||null, text: b.text||'', wamid: b.wamid||null, ts, type: b.type||'text', direction: 'in', status: b.status||'received' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "id": "code-norm-in",
+      "name": "Normalize"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH c AS (INSERT INTO contacts (phone, name) VALUES ($1, $2) ON CONFLICT (phone) DO UPDATE SET name = COALESCE(EXCLUDED.name, contacts.name) RETURNING id), conv AS (INSERT INTO conversations (contact_id, last_message, last_message_at, last_direction, last_status, last_inbound, unread_count, status, updated_at) SELECT c.id, $3, to_timestamp(($5)::double precision), $7, $8, CASE WHEN $7='in' THEN to_timestamp(($5)::double precision) ELSE NULL END, CASE WHEN $7='in' THEN 1 ELSE 0 END, 'open', now() FROM c ON CONFLICT (contact_id) DO UPDATE SET last_message = EXCLUDED.last_message, last_message_at = EXCLUDED.last_message_at, last_direction = EXCLUDED.last_direction, last_status = EXCLUDED.last_status, last_inbound = CASE WHEN EXCLUDED.last_direction='in' THEN EXCLUDED.last_message_at ELSE conversations.last_inbound END, unread_count = CASE WHEN EXCLUDED.last_direction='in' THEN conversations.unread_count + 1 ELSE conversations.unread_count END, status='open', updated_at=now() RETURNING id) INSERT INTO messages (conversation_id, wamid, direction, type, text, status, created_at) SELECT conv.id, $4, $7, $6, $3, $8, to_timestamp(($5)::double precision) FROM conv ON CONFLICT (wamid) DO NOTHING RETURNING id, conversation_id;",
+        "options": { "queryReplacement": "={{ [ $json.phone, $json.name, $json.text, $json.wamid, $json.ts, $json.type, $json.direction, $json.status ] }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [440, 0],
+      "id": "pg-savein",
+      "name": "Upsert + Insert",
+      "alwaysOutputData": true,
+      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = ($input.first() && $input.first().json) || {};\nreturn [{ json: { ok: true, id: r.id != null ? String(r.id) : null, conversationId: r.conversation_id != null ? String(r.conversation_id) : null } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "id": "code-resp-in",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [880, 0],
+      "id": "resp-savein",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Normalize", "type": "main", "index": 0 }]] },
+    "Normalize": { "main": [[{ "node": "Upsert + Insert", "type": "main", "index": 0 }]] },
+    "Upsert + Insert": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

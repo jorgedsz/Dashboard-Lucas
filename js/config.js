@@ -16,9 +16,9 @@ window.WA_CONFIG = {
   convUrl: 'https://primary-production-b7ae.up.railway.app/webhook/wa-conversations',
   msgUrl:  'https://primary-production-b7ae.up.railway.app/webhook/wa-messages',
 
-  // Modo inicial: 'demo' hasta que la base de datos esté lista.
-  // Cambia a 'live' aquí o desde Ajustes cuando todo esté conectado.
-  defaultMode: 'demo',
+  // Modo inicial: 'live' (backend n8n + Postgres ya conectados y probados).
+  // Cambia a 'demo' aquí o desde Ajustes si quieres datos simulados.
+  defaultMode: 'live',
 
   // Sondeo de novedades en modo LIVE (ms). 0 = desactivado.
   pollInterval: 10000

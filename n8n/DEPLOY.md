@@ -14,6 +14,7 @@ Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de M
 | WA · Save Inbound | UkBXFr1SyiAozJPV | `/webhook/wa-save-in` (POST) — guardar mensaje entrante a mano |
 | WA · Save Outbound | INdmGsXWSafVvjJv | `/webhook/wa-save-out` (POST) — guardar mensaje saliente a mano |
 | WA · Get Media | KG3XFlA8lcbUmb3c | `/webhook/wa-media?id=` (GET) — sirve el binario guardado (bytea) con su Content-Type |
+| WA · Delete Conversation | 2ZsU5NHaKOJIvKyo | `/webhook/wa-delete-conversation` (POST) — elimina una conversación y sus mensajes (CASCADE) |
 
 ## Guardado manual de mensajes (endpoints genéricos)
 
@@ -85,6 +86,13 @@ Patrón en tu flujo de n8n (entrante):
 
 > Probado: subir base64 → `media_data` → `GET /wa-media?id=` devuelve los bytes idénticos
 > con el `Content-Type` correcto y CORS `*`.
+
+## Eliminar conversación
+
+**POST `/webhook/wa-delete-conversation`** con `{ "conversationId": "107" }`.
+Borra la conversación y **todos sus mensajes** (FK `ON DELETE CASCADE`). El contacto
+se conserva. Respuesta: `{ "ok": true, "deleted": true, "id": "107" }` (o `deleted:false`
+si el id no existía). El dashboard lo llama desde el botón 🗑️ en la cabecera del hilo.
 
 ## Credenciales
 - **Postgres (en uso):** `2W6eREXRp7yllk50` — "WA Postgres Direct".

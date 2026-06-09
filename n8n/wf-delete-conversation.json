@@ -1,0 +1,72 @@
+{
+  "name": "WA · Delete Conversation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-delete-conversation",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-del",
+      "name": "Webhook",
+      "webhookId": "wa-delete-conversation-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = ($input.first().json.body) || {};\nconst id = b.conversationId != null ? String(b.conversationId).replace(/[^0-9]/g, '') : '';\nreturn [{ json: { conversationId: id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0],
+      "id": "code-del-norm",
+      "name": "Parse"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM conversations WHERE id = (NULLIF($1, ''))::bigint RETURNING id;",
+        "options": { "queryReplacement": "={{ [ $json.conversationId ] }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [440, 0],
+      "id": "pg-del",
+      "name": "Delete Conversation",
+      "alwaysOutputData": true,
+      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = ($input.first() && $input.first().json) || {};\nconst deleted = r.id != null;\nreturn [{ json: { ok: true, deleted, id: r.id != null ? String(r.id) : null } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0],
+      "id": "code-del-resp",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [880, 0],
+      "id": "resp-del",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse", "type": "main", "index": 0 }]] },
+    "Parse": { "main": [[{ "node": "Delete Conversation", "type": "main", "index": 0 }]] },
+    "Delete Conversation": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

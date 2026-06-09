@@ -65,9 +65,8 @@
     // ---------- badge de conexión ----------
     renderConnBadge() {
       const b = $('#connBadge');
-      const mode = Store.settings.mode;
-      b.className = 'conn conn--' + (mode === 'live' ? 'live' : 'demo');
-      b.textContent = mode === 'live' ? 'LIVE' : 'DEMO';
+      b.className = 'conn conn--live';
+      b.textContent = 'LIVE';
     },
 
     // ---------- lista de conversaciones ----------

@@ -1,20 +1,19 @@
 /* =========================================================
-   api.js — Adaptador de datos.
-   Una sola interfaz que el resto de la app consume. Por dentro
-   conmuta entre DEMO (datos locales) y LIVE (webhooks de n8n).
+   api.js — Adaptador de datos (modo LIVE, backend n8n).
+   Una sola interfaz que el resto de la app consume.
 
-   >>> AQUÍ ESTÁN LOS PUNTOS DE INTEGRACIÓN CON n8n / META <<<
-   Cuando pases a modo LIVE, n8n es el backend:
-     · sendUrl  -> tu Webhook de n8n que llama a la WhatsApp Cloud API
-     · convUrl  -> tu Webhook de n8n que devuelve las conversaciones
-     · msgUrl   -> tu Webhook de n8n que devuelve los mensajes de una conversación
-   El formato JSON esperado es idéntico al de DemoData (ver data.js),
-   así que el frontend no cambia: solo cambian las URLs.
+   >>> PUNTOS DE INTEGRACIÓN CON n8n / META <<<
+   n8n es el backend:
+     · sendUrl   -> Webhook que llama a la WhatsApp Cloud API
+     · convUrl   -> Webhook que devuelve las conversaciones
+     · msgUrl    -> Webhook que devuelve los mensajes de una conversación
+     · deleteUrl -> Webhook que elimina una conversación (y sus mensajes)
    ========================================================= */
 (function (global) {
   'use strict';
 
   const S = () => Store.settings;
+  const CFG = () => (global.WA_CONFIG || {});
 
   function headers() {
     const h = { 'Content-Type': 'application/json' };
@@ -31,67 +30,58 @@
 
   const Api = {
     // ---------------------------------------------------------------
-    // Cargar conversaciones + mensajes iniciales
+    // Cargar conversaciones. GET al webhook -> { conversations: [...] }
     // ---------------------------------------------------------------
     async loadConversations() {
-      if (S().mode === 'demo') {
-        return {
-          conversations: structuredClone(DemoData.conversations),
-          messagesByConv: structuredClone(DemoData.messagesByConv),
-          templates: DemoData.templates
-        };
-      }
-      // LIVE: GET al webhook de n8n. Se espera { conversations: [...] }
       const data = await http(S().convUrl, { method: 'GET', headers: headers() });
       return {
         conversations: data.conversations || data || [],
         messagesByConv: data.messagesByConv || {},
-        templates: data.templates || DemoData.templates
+        templates: data.templates || CFG().templates || []
       };
     },
 
     // ---------------------------------------------------------------
-    // Mensajes de una conversación (lazy load en LIVE)
+    // Mensajes de una conversación (lazy load)
     // ---------------------------------------------------------------
     async loadMessages(conversationId) {
-      if (S().mode === 'demo') {
-        return structuredClone(DemoData.messagesByConv[conversationId] || []);
-      }
       const url = S().msgUrl + (S().msgUrl.includes('?') ? '&' : '?') + 'conversationId=' + encodeURIComponent(conversationId);
       const data = await http(url, { method: 'GET', headers: headers() });
       return data.messages || data || [];
     },
 
     // ---------------------------------------------------------------
-    // Enviar mensaje
-    // Payload que recibe tu webhook de n8n:
+    // Enviar mensaje. POST a n8n -> WhatsApp Cloud API.
     //   { conversationId, to, type:'text'|'template', text, template, params }
-    // En n8n -> nodo HTTP Request -> POST a:
-    //   https://graph.facebook.com/v21.0/{PHONE_NUMBER_ID}/messages
-    //   { messaging_product:'whatsapp', to, type, text:{ body } }
+    // Se espera { id, status, wamid } de vuelta.
     // ---------------------------------------------------------------
     async sendMessage(payload) {
-      if (S().mode === 'demo') {
-        // Simula latencia y confirmación de envío
-        await new Promise(r => setTimeout(r, 350));
-        return { id: 'm' + Date.now(), status: 'sent', wamid: 'wamid.DEMO' + Date.now() };
-      }
       const data = await http(S().sendUrl, {
         method: 'POST',
         headers: headers(),
         body: JSON.stringify(payload)
       });
-      // Se espera { id, status, wamid } desde n8n (respuesta de la Cloud API)
       return data || { id: 'm' + Date.now(), status: 'sent' };
     },
 
     // ---------------------------------------------------------------
-    // Sondeo de novedades (polling). En LIVE, n8n debe exponer en convUrl
-    // las conversaciones con su último mensaje y unreadCount actualizados.
-    // (Si más adelante montas WebSocket/SSE en n8n, se sustituye esto.)
+    // Eliminar una conversación (y sus mensajes, vía CASCADE en Postgres).
+    // POST { conversationId } -> { ok: true }
+    // ---------------------------------------------------------------
+    async deleteConversation(conversationId) {
+      const data = await http(S().deleteUrl, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ conversationId })
+      });
+      return data || { ok: true };
+    },
+
+    // ---------------------------------------------------------------
+    // Sondeo de novedades (polling). n8n expone en convUrl las
+    // conversaciones con su último mensaje y unreadCount actualizados.
     // ---------------------------------------------------------------
     async poll() {
-      if (S().mode === 'demo') return null;
       try {
         const data = await http(S().convUrl, { method: 'GET', headers: headers() });
         return { conversations: data.conversations || data || [] };

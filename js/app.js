@@ -49,13 +49,31 @@
     async openConversation(id) {
       Store.activeId = id;
       Store.markRead(id);
-      // En LIVE carga mensajes bajo demanda si aún no están
-      if (Store.settings.mode === 'live' && !(Store.messagesByConv[id] || []).length) {
+      // Carga mensajes bajo demanda si aún no están
+      if (!(Store.messagesByConv[id] || []).length) {
         try { Store.messagesByConv[id] = await Api.loadMessages(id); }
         catch (e) { UI.toast('No se pudieron cargar los mensajes'); }
       }
       UI.renderList();
       UI.renderThread();
+    },
+
+    // ---------- eliminar conversación ----------
+    async deleteConversation() {
+      const conv = Store.activeConversation();
+      if (!conv) return;
+      if (!confirm(`¿Eliminar la conversación con ${conv.name}?\nSe borrarán todos sus mensajes. Esta acción no se puede deshacer.`)) return;
+      try {
+        await Api.deleteConversation(conv.id);
+        Store.conversations = Store.conversations.filter(c => c.id !== conv.id);
+        delete Store.messagesByConv[conv.id];
+        Store.activeId = null;
+        UI.renderList();
+        UI.renderThread();
+        UI.toast('Conversación eliminada');
+      } catch (e) {
+        UI.toast('Error al eliminar: ' + e.message);
+      }
     },
 
     // ---------- enviar mensaje ----------
@@ -94,41 +112,10 @@
         const res = await Api.sendMessage(payload);
         optimistic.id = res.id || optimistic.id;
         optimistic.status = res.status || 'delivered';
-        // En DEMO simulamos progresión de ticks
-        if (Store.settings.mode === 'demo') this.simulateTicks(optimistic, conv.id);
       } catch (e) {
         optimistic.status = 'failed';
         UI.toast('Error al enviar: ' + e.message);
       }
-      UI.renderThread();
-      UI.renderList();
-    },
-
-    // DEMO: avanza ticks sent -> delivered -> read
-    simulateTicks(msg, convId) {
-      setTimeout(() => { msg.status = 'delivered'; this.refreshIfActive(convId); }, 800);
-      setTimeout(() => { msg.status = 'read'; this.refreshIfActive(convId); }, 2200);
-    },
-    refreshIfActive(convId) {
-      if (Store.activeId === convId) { UI.renderThread(); UI.renderList(); }
-    },
-
-    // DEMO: simular un mensaje entrante
-    simulateIncoming() {
-      const conv = Store.activeConversation();
-      if (!conv) return;
-      const samples = ['Perfecto, gracias 🙏', '¿Me puedes dar más información?', 'De acuerdo, quedo atento', 'Sí, me interesa', '👍'];
-      const msg = {
-        id: 'in' + Date.now(),
-        conversationId: conv.id,
-        direction: 'in',
-        type: 'text',
-        text: samples[Math.floor(Math.random() * samples.length)],
-        channel: conv.channel,
-        timestamp: Date.now(),
-        status: 'received'
-      };
-      Store.addMessage(conv.id, msg);
       UI.renderThread();
       UI.renderList();
     },
@@ -142,11 +129,11 @@
       this.send(filled, { template: tpl.name });
     },
 
-    // ---------- polling (modo LIVE) ----------
+    // ---------- polling ----------
     startPolling() {
       clearInterval(pollTimer);
       const ms = Number(Store.settings.pollInterval) || 0;
-      if (Store.settings.mode !== 'live' || ms <= 0) return;
+      if (ms <= 0) return;
       pollTimer = setInterval(async () => {
         const res = await Api.poll();
         if (res && res.conversations) {
@@ -166,26 +153,25 @@
     // ---------- ajustes ----------
     openSettings() {
       const s = Store.settings;
-      document.querySelector(`input[name=mode][value="${s.mode}"]`).checked = true;
       $('#cfgSendUrl').value = s.sendUrl;
       $('#cfgConvUrl').value = s.convUrl;
       $('#cfgMsgUrl').value = s.msgUrl;
+      $('#cfgDeleteUrl').value = s.deleteUrl;
       $('#cfgPoll').value = String(s.pollInterval);
       $('#cfgToken').value = s.token;
       $('#settingsModal').hidden = false;
     },
     async saveSettings() {
-      const mode = (document.querySelector('input[name=mode]:checked') || {}).value || 'demo';
       Object.assign(Store.settings, {
-        mode,
         sendUrl: $('#cfgSendUrl').value.trim(),
         convUrl: $('#cfgConvUrl').value.trim(),
         msgUrl: $('#cfgMsgUrl').value.trim(),
+        deleteUrl: $('#cfgDeleteUrl').value.trim(),
         pollInterval: Number($('#cfgPoll').value),
         token: $('#cfgToken').value.trim()
       });
-      if (mode === 'live' && !Store.settings.convUrl) {
-        UI.toast('Modo LIVE requiere al menos la URL de conversaciones');
+      if (!Store.settings.convUrl) {
+        UI.toast('Falta la URL de conversaciones');
       }
       Store.saveSettings(Store.settings);
       $('#settingsModal').hidden = true;
@@ -213,16 +199,13 @@
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.handleSend(); }
       });
       $('#btnSend').addEventListener('click', () => this.handleSend());
-      // simular entrante
-      $('#btnSimulate').addEventListener('click', () => {
-        if (Store.settings.mode !== 'demo') { UI.toast('Solo disponible en modo DEMO'); return; }
-        this.simulateIncoming();
-      });
       // destacar
       $('#btnStar').addEventListener('click', () => {
         const c = Store.activeConversation(); if (!c) return;
         c.starred = !c.starred; UI.renderList(); UI.toast(c.starred ? 'Destacada' : 'Sin destacar');
       });
+      // eliminar conversación
+      $('#btnDelete').addEventListener('click', () => this.deleteConversation());
       // estado abierta/cerrada
       document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => {
         const c = Store.activeConversation(); if (!c) return;

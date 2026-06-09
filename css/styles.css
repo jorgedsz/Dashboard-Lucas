@@ -321,6 +321,7 @@ input, textarea, select { font-family: inherit; font-size: 14px; }
 /* ============ BOTONES ============ */
 .btn-icon { width: 34px; height: 34px; border-radius: 8px; color: var(--text-soft); display: grid; place-items: center; transition: background .12s, color .12s; }
 .btn-icon:hover { background: var(--bg); color: var(--text); }
+.btn-icon--danger:hover { background: rgba(239,68,68,.12); color: var(--danger); }
 .btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--text-soft); border: 1px solid var(--border); transition: background .12s; }
 .btn-ghost:hover { background: var(--bg); }
 .btn-ghost svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none; }

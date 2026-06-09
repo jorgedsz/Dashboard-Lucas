@@ -40,7 +40,7 @@
       <header class="list__head">
         <div class="list__title-row">
           <h1>Conversaciones</h1>
-          <span id="connBadge" class="conn conn--demo" title="Estado de conexión">DEMO</span>
+          <span id="connBadge" class="conn conn--live" title="Estado de conexión">LIVE</span>
         </div>
         <div class="search">
           <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
@@ -74,10 +74,8 @@
             </div>
           </div>
           <div class="thread__head-actions">
-            <button id="btnSimulate" class="btn-ghost" title="Simular mensaje entrante (solo DEMO)">
-              <svg viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg> Simular entrante
-            </button>
             <button id="btnStar" class="btn-icon" title="Destacar"><svg viewBox="0 0 24 24"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></button>
+            <button id="btnDelete" class="btn-icon btn-icon--danger" title="Eliminar conversación"><svg viewBox="0 0 24 24"><path d="M9 3v1H4v2h16V4h-5V3H9zM6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13H6zm4 2h1.5v9H10V9zm2.5 0H14v9h-1.5V9z"/></svg></button>
           </div>
         </header>
 
@@ -153,11 +151,6 @@
         <button class="btn-icon" data-close>✕</button>
       </header>
       <div class="modal__body">
-        <div class="mode-switch">
-          <label class="radio"><input type="radio" name="mode" value="demo" /> <span><strong>Modo DEMO</strong> — datos simulados, sin conexión</span></label>
-          <label class="radio"><input type="radio" name="mode" value="live" /> <span><strong>Modo LIVE</strong> — conectado a tus webhooks de n8n</span></label>
-        </div>
-
         <div class="form-group">
           <label>URL webhook · Enviar mensaje <small>(POST)</small></label>
           <input type="url" id="cfgSendUrl" placeholder="https://tu-n8n/webhook/wa-send" />
@@ -172,6 +165,11 @@
         <div class="form-group">
           <label>URL webhook · Obtener mensajes <small>(GET ?conversationId=)</small></label>
           <input type="url" id="cfgMsgUrl" placeholder="https://tu-n8n/webhook/wa-messages" />
+        </div>
+
+        <div class="form-group">
+          <label>URL webhook · Eliminar conversación <small>(POST)</small></label>
+          <input type="url" id="cfgDeleteUrl" placeholder="https://tu-n8n/webhook/wa-delete-conversation" />
         </div>
 
         <div class="form-group">
@@ -227,7 +225,6 @@
 
   <!-- Scripts clásicos (compatibles con file://, sin paso de build) -->
   <script src="js/config.js"></script>
-  <script src="js/data.js"></script>
   <script src="js/store.js"></script>
   <script src="js/api.js"></script>
   <script src="js/ui.js"></script>

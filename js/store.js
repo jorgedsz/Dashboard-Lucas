@@ -10,10 +10,10 @@
   const cfg = (typeof window !== 'undefined' && window.WA_CONFIG) || {};
 
   const defaultSettings = {
-    mode: cfg.defaultMode || 'demo',   // 'demo' | 'live'
     sendUrl: cfg.sendUrl || '',        // POST  -> enviar mensaje (n8n -> WhatsApp Cloud API)
     convUrl: cfg.convUrl || '',        // GET   -> lista de conversaciones
     msgUrl: cfg.msgUrl || '',          // GET   -> mensajes de una conversación
+    deleteUrl: cfg.deleteUrl || '',    // POST  -> eliminar una conversación
     pollInterval: cfg.pollInterval != null ? cfg.pollInterval : 10000, // ms; 0 = desactivado
     token: ''                          // header opcional x-dashboard-token
   };
@@ -34,7 +34,7 @@
     settings: loadSettings(),
     conversations: [],
     messagesByConv: {},
-    templates: [],
+    templates: cfg.templates || [],
     activeId: null,
     filter: 'all',       // all | unread | starred
     search: '',

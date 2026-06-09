@@ -141,25 +141,32 @@
       this.renderDetails(conv);
     },
 
-    // Renderiza el adjunto según su tipo (imagen, audio, video, documento)
+    // ¿la url o el mime corresponden a un PDF?
+    isPdf(url, mime) { return mime === 'application/pdf' || /\.pdf($|\?)/i.test(url || ''); },
+
+    // Renderiza el adjunto según su tipo (imagen, audio, video, documento).
+    // Imagen, video y documento abren el visor (lightbox) al hacer clic.
     mediaNode(m) {
       const url = m.mediaUrl;
       if (!url) return '';
       const u = esc(url);
       const mime = (m.mediaMime || '').toLowerCase();
       const type = m.type === 'sticker' ? 'image' : m.type;
+      const name = esc(m.mediaFilename || '');
+      const data = `data-url="${u}" data-mime="${esc(mime)}" data-name="${name}"`;
       if (type === 'image' || mime.startsWith('image/')) {
-        return `<div class="msg__media"><a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="" loading="lazy"></a></div>`;
+        return `<div class="msg__media js-media-open" data-mtype="image" ${data}><img src="${u}" alt="" loading="lazy"></div>`;
       }
       if (type === 'audio' || mime.startsWith('audio/')) {
         return `<div class="msg__media msg__media--audio"><audio controls preload="none" src="${u}"></audio></div>`;
       }
       if (type === 'video' || mime.startsWith('video/')) {
-        return `<div class="msg__media"><video controls preload="metadata" src="${u}"></video></div>`;
+        return `<div class="msg__media js-media-open msg__media--video" data-mtype="video" ${data}><video preload="metadata" src="${u}#t=0.1"></video><span class="msg__play">▶</span></div>`;
       }
-      // documento / fallback genérico
-      const name = esc(m.mediaFilename || 'Documento');
-      return `<a class="msg__doc" href="${u}" target="_blank" rel="noopener" download>${DOC_ICON}<span class="msg__doc-name">${name}</span></a>`;
+      // documento → tarjeta que abre el visor (PDF embebido / descarga)
+      const label = name || (this.isPdf(url, mime) ? 'PDF' : 'Documento');
+      const hint = this.isPdf(url, mime) ? 'Ver' : 'Abrir';
+      return `<div class="msg__doc js-media-open" data-mtype="document" ${data}>${DOC_ICON}<span class="msg__doc-name">${label}</span><span class="msg__doc-hint">${hint}</span></div>`;
     },
 
     messageNode(m) {
@@ -175,7 +182,41 @@
       if (out) inner += `<span class="msg__tick ${m.status === 'read' ? 'read' : ''}">${TICK[m.status] || TICK.sent}</span>`;
       inner += `</div>`;
       node.innerHTML = inner;
+      // abrir el visor al hacer clic en el adjunto
+      const opener = node.querySelector('.js-media-open');
+      if (opener) opener.addEventListener('click', () => this.openMedia({
+        url: opener.dataset.url, mtype: opener.dataset.mtype,
+        mime: opener.dataset.mime, name: opener.dataset.name
+      }));
       return node;
+    },
+
+    // ---------- visor de media (lightbox) ----------
+    openMedia(o) {
+      const url = o.url, mime = (o.mime || '').toLowerCase(), name = o.name || '';
+      const body = $('#mediaModalBody');
+      $('#mediaModalName').textContent = name;
+      const openA = $('#mediaModalOpen'), dlA = $('#mediaModalDl');
+      openA.href = url; dlA.href = url;
+      if (name) dlA.setAttribute('download', name); else dlA.removeAttribute('download');
+      let html;
+      if (o.mtype === 'image' || mime.startsWith('image/')) {
+        html = `<img class="media-modal__img" src="${esc(url)}" alt="">`;
+      } else if (o.mtype === 'video' || mime.startsWith('video/')) {
+        html = `<video class="media-modal__media" src="${esc(url)}" controls autoplay></video>`;
+      } else if (o.mtype === 'audio' || mime.startsWith('audio/')) {
+        html = `<audio class="media-modal__media" src="${esc(url)}" controls autoplay></audio>`;
+      } else if (this.isPdf(url, mime)) {
+        html = `<iframe class="media-modal__frame" src="${esc(url)}" title="${esc(name)}"></iframe>`;
+      } else {
+        html = `<div class="media-modal__noprev">${DOC_ICON}<p>No hay vista previa para este tipo de archivo${name ? ` (${esc(name)})` : ''}.</p><a class="btn-primary" href="${esc(url)}" target="_blank" rel="noopener" download>Descargar</a></div>`;
+      }
+      body.innerHTML = html;
+      $('#mediaModal').hidden = false;
+    },
+    closeMedia() {
+      $('#mediaModalBody').innerHTML = ''; // detiene video/audio
+      $('#mediaModal').hidden = true;
     },
 
     // ---------- panel de detalles ----------

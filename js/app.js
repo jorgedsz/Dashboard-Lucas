@@ -239,7 +239,14 @@
       document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => {
         $('#settingsModal').hidden = true; $('#templateModal').hidden = true;
       }));
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#settingsModal').hidden = true; $('#templateModal').hidden = true; } });
+      // cerrar visor de media
+      document.querySelectorAll('[data-mclose]').forEach(b => b.addEventListener('click', () => UI.closeMedia()));
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+          $('#settingsModal').hidden = true; $('#templateModal').hidden = true;
+          UI.closeMedia();
+        }
+      });
     },
 
     handleSend() {

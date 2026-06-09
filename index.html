@@ -209,6 +209,20 @@
     </div>
   </div>
 
+  <!-- ============ VISOR DE MEDIA (lightbox) ============ -->
+  <div class="media-modal" id="mediaModal" hidden>
+    <div class="media-modal__backdrop" data-mclose></div>
+    <div class="media-modal__bar">
+      <span class="media-modal__name" id="mediaModalName"></span>
+      <div class="media-modal__actions">
+        <a class="media-modal__btn" id="mediaModalOpen" target="_blank" rel="noopener" title="Abrir en pestaña nueva">⤢</a>
+        <a class="media-modal__btn" id="mediaModalDl" title="Descargar">⤓</a>
+        <button class="media-modal__btn" data-mclose title="Cerrar (Esc)">✕</button>
+      </div>
+    </div>
+    <div class="media-modal__body" id="mediaModalBody"></div>
+  </div>
+
   <div id="toast" class="toast" hidden></div>
 
   <!-- Scripts clásicos (compatibles con file://, sin paso de build) -->

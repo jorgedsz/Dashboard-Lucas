@@ -1,0 +1,61 @@
+{
+  "name": "WA · Get Media",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wa-media",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-media",
+      "name": "Webhook",
+      "webhookId": "wa-media-hook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT encode(media_data, 'base64') AS media_b64, media_mime, media_filename FROM messages WHERE id = ($1)::bigint AND media_data IS NOT NULL;",
+        "options": { "queryReplacement": "={{ $json.query.id }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [220, 0],
+      "id": "pg-media",
+      "name": "Select Media",
+      "alwaysOutputData": true,
+      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const it = ($input.first() && $input.first().json) || {};\nconst b64 = it.media_b64 || '';\nconst mime = it.media_mime || 'application/octet-stream';\nconst name = it.media_filename || 'file';\nconst buf = Buffer.from(b64, 'base64');\nconst data = await this.helpers.prepareBinaryData(buf, name, mime);\nreturn [{ json: { ok: !!b64, mime }, binary: { data } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 0],
+      "id": "code-media",
+      "name": "To Binary"
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "responseBinaryPropertyName": "data",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }, { "name": "Cache-Control", "value": "public, max-age=86400" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, 0],
+      "id": "resp-media",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Select Media", "type": "main", "index": 0 }]] },
+    "Select Media": { "main": [[{ "node": "To Binary", "type": "main", "index": 0 }]] },
+    "To Binary": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

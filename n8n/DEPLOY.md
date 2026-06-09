@@ -13,6 +13,7 @@ Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de M
 | WA · DB Setup | R1VYzFowxtfihDNb | `/webhook/wa-db-setup` (GET, un solo uso) |
 | WA · Save Inbound | UkBXFr1SyiAozJPV | `/webhook/wa-save-in` (POST) — guardar mensaje entrante a mano |
 | WA · Save Outbound | INdmGsXWSafVvjJv | `/webhook/wa-save-out` (POST) — guardar mensaje saliente a mano |
+| WA · Get Media | KG3XFlA8lcbUmb3c | `/webhook/wa-media?id=` (GET) — sirve el binario guardado (bytea) con su Content-Type |
 
 ## Guardado manual de mensajes (endpoints genéricos)
 
@@ -34,10 +35,15 @@ aceptan el mismo cuerpo genérico:
   "type": "text",                  // opcional — text | image | audio | video | document | sticker
   "status": "sent",                // opcional (in→received, out→sent por defecto)
 
-  // --- adjuntos (image / audio / video / document) ---
+  // --- adjuntos: opción 1 (URL pública ya accesible) ---
   "mediaUrl": "https://.../archivo.pdf", // URL pública/accesible del adjunto
   "mediaMime": "application/pdf",        // opcional (alias: mimeType) — refuerza el render por tipo
-  "filename": "cotizacion.pdf"           // opcional (alias: mediaFilename) — nombre mostrado en documentos
+  "filename": "cotizacion.pdf",          // opcional (alias: mediaFilename) — nombre mostrado en documentos
+
+  // --- adjuntos: opción 2 (subir el binario, p.ej. media de Meta) ---
+  "mediaBase64": "<base64 del archivo>", // alias: mediaData. Acepta también data:...;base64,xxxx
+  "mediaMime": "audio/ogg",              // recomendado cuando subes binario
+  "filename": "nota.ogg"                 // opcional
 }
 ```
 
@@ -54,7 +60,31 @@ Respuesta: `{ "ok": true, "id": "3", "conversationId": "2" }`.
   renderiza imagen, reproductor de audio/video o tarjeta de documento descargable según
   el tipo. La vista previa en la lista muestra `📷 Imagen`, `🎵 Audio`, `📄 nombre.pdf`, etc.
   cuando no hay texto. **Requiere correr `wa-db-setup` una vez** para crear las columnas
-  `media_mime` y `media_filename`.
+  `media_mime`, `media_filename` y `media_data`.
+
+## Media de Meta (URLs `lookaside.fbsbx.com`)
+
+Las URLs de media que manda Meta **no sirven directo** en el dashboard: requieren el
+`Bearer` token de WhatsApp y **expiran a los ~5 min**. Hay que **descargar el binario
+y guardarlo en nuestro lado** (no guardar la URL de Meta).
+
+Patrón en tu flujo de n8n (entrante):
+1. **HTTP Request** `GET` a la URL `lookaside...` con *Predefined Credential Type → WhatsApp API*
+   → devuelve el binario (p. ej. `File.ogg`, `audio/ogg`). n8n lo deja en la propiedad
+   binaria `data`, y su base64 queda accesible en `{{ $binary.data.data }}`.
+2. **HTTP Request** `POST` a `/webhook/wa-save-in` con cuerpo JSON:
+   ```
+   contactId, channel, type:"audio",
+   mediaBase64: {{ $binary.data.data }},
+   mediaMime:  {{ $binary.data.mimeType }},
+   filename:   {{ $binary.data.fileName }}
+   ```
+3. `wa-save-in` decodifica el base64 y lo guarda en `messages.media_data` (`bytea`).
+4. El dashboard recibe `mediaUrl = .../webhook/wa-media?id=<msgId>` (lo arma `wa-messages`),
+   y **`wa-media`** sirve el binario con su Content-Type. Carga perezosa, sin servicios externos.
+
+> Probado: subir base64 → `media_data` → `GET /wa-media?id=` devuelve los bytes idénticos
+> con el `Content-Type` correcto y CORS `*`.
 
 ## Credenciales
 - **Postgres (en uso):** `2W6eREXRp7yllk50` — "WA Postgres Direct".

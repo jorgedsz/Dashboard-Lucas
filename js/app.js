@@ -9,7 +9,9 @@
 
   const App = {
     async init() {
-      this.applyTheme(localStorage.getItem('wa_dashboard_theme') || 'light');
+      let savedTheme = 'light';
+      try { savedTheme = localStorage.getItem('wa_dashboard_theme') || 'light'; } catch (_) {}
+      this.applyTheme(savedTheme);
       UI.renderConnBadge();
       await this.refreshData();
       this.bindEvents();
@@ -27,7 +29,7 @@
     toggleTheme() {
       const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       this.applyTheme(next);
-      localStorage.setItem('wa_dashboard_theme', next);
+      try { localStorage.setItem('wa_dashboard_theme', next); } catch (_) {}
     },
 
     // ---------- carga / recarga de datos ----------

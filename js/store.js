@@ -27,7 +27,9 @@
     }
   }
   function saveSettings(s) {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    // En un iframe (GHL) con privacidad estricta, el storage puede estar
+    // bloqueado y setItem lanza; lo envolvemos para no romper la app.
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); } catch (_) {}
   }
 
   const Store = {

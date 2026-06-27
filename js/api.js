@@ -78,6 +78,16 @@
     },
 
     // ---------------------------------------------------------------
+    // Datos del contacto en GoHighLevel (tags, email, tel, custom fields,
+    // opportunities). GET ?contactId= -> { ok, contact, opportunities }
+    // ---------------------------------------------------------------
+    async getGhlContact(contactId) {
+      if (!S().ghlUrl) return null;
+      const url = S().ghlUrl + (S().ghlUrl.includes('?') ? '&' : '?') + 'contactId=' + encodeURIComponent(contactId);
+      return await http(url, { method: 'GET', headers: headers() });
+    },
+
+    // ---------------------------------------------------------------
     // Sondeo de novedades (polling). n8n expone en convUrl las
     // conversaciones con su último mensaje y unreadCount actualizados.
     // ---------------------------------------------------------------

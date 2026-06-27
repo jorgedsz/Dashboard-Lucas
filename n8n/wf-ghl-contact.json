@@ -1,0 +1,133 @@
+{
+  "name": "WA · GHL Contact",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wa-ghl-contact",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-ghl",
+      "name": "Webhook",
+      "webhookId": "wa-ghl-contact-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const q = ($input.first().json.query) || {};\nconst id = q.contactId ? String(q.contactId).trim() : '';\nreturn [{ json: { contactId: id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, 0],
+      "id": "code-ghl-parse",
+      "name": "Parse"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $('Parse').first().json.contactId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Version", "value": "2021-07-28" }, { "name": "Accept", "value": "application/json" } ] },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 0],
+      "id": "http-contact",
+      "name": "Contact",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://services.leadconnectorhq.com/opportunities/search?location_id=bzRd2deoIdOClJZ44bv5&contact_id={{ $('Parse').first().json.contactId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Version", "value": "2021-07-28" }, { "name": "Accept", "value": "application/json" } ] },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 0],
+      "id": "http-opps",
+      "name": "Opportunities",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://services.leadconnectorhq.com/locations/bzRd2deoIdOClJZ44bv5/customFields",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Version", "value": "2021-07-28" }, { "name": "Accept", "value": "application/json" } ] },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 0],
+      "id": "http-cf",
+      "name": "Custom Fields",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://services.leadconnectorhq.com/opportunities/pipelines?locationId=bzRd2deoIdOClJZ44bv5",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Version", "value": "2021-07-28" }, { "name": "Accept", "value": "application/json" } ] },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 0],
+      "id": "http-pipes",
+      "name": "Pipelines",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "function pick(node){ try { const x = $(node).first(); return (x && x.json) || {}; } catch(e){ return {}; } }\nconst contact = pick('Contact').contact || {};\nconst opps = pick('Opportunities').opportunities || [];\nconst cfDefs = pick('Custom Fields').customFields || [];\nconst pipes = pick('Pipelines').pipelines || [];\nif (!contact.id) return [{ json: { ok:false, contact:null, opportunities:[] } }];\nconst cfName = {}; for (const d of cfDefs) cfName[d.id] = d.name;\nconst pipeName = {}, stageName = {};\nfor (const p of pipes){ pipeName[p.id]=p.name; for (const s of (p.stages||[])) stageName[s.id]=s.name; }\nconst trunc = (v) => { let s = (typeof v === 'string') ? v : JSON.stringify(v); if (s == null) return ''; if (s.length > 1000) s = s.slice(0,1000) + '\\u2026'; return s; };\nconst customFields = (contact.customFields||[]).filter(f => f && f.value != null && f.value !== '' && !(Array.isArray(f.value) && !f.value.length)).map(f => ({ name: cfName[f.id] || f.id, value: trunc(f.value) }));\nconst name = [contact.firstName, contact.lastName].filter(Boolean).join(' ').trim() || contact.contactName || contact.name || '';\nconst opportunities = opps.map(o => ({ id:o.id, name:o.name||'', status:o.status||'', monetaryValue: o.monetaryValue!=null ? o.monetaryValue : null, pipeline: pipeName[o.pipelineId]||'', stage: stageName[o.pipelineStageId]||'', source:o.source||'', createdAt:o.createdAt||null }));\nreturn [{ json: { ok:true, contact: { id:contact.id, name, firstName:contact.firstName||'', lastName:contact.lastName||'', email:contact.email||'', phone:contact.phone||'', companyName:contact.companyName||'', source:contact.source||'', type:contact.type||'', country:contact.country||'', timezone:contact.timezone||'', dnd: !!contact.dnd, dateAdded:contact.dateAdded||null, dateUpdated:contact.dateUpdated||null, tags: contact.tags||[], customFields }, opportunities } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 0],
+      "id": "code-ghl-format",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1400, 0],
+      "id": "resp-ghl",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse", "type": "main", "index": 0 }]] },
+    "Parse": { "main": [[{ "node": "Contact", "type": "main", "index": 0 }]] },
+    "Contact": { "main": [[{ "node": "Opportunities", "type": "main", "index": 0 }]] },
+    "Opportunities": { "main": [[{ "node": "Custom Fields", "type": "main", "index": 0 }]] },
+    "Custom Fields": { "main": [[{ "node": "Pipelines", "type": "main", "index": 0 }]] },
+    "Pipelines": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

@@ -6,7 +6,7 @@
   <title>Conversaciones · WhatsApp Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=5" />
+  <link rel="stylesheet" href="css/styles.css?v=6" />
 </head>
 <body>
   <!-- ============ APP SHELL ============ -->
@@ -122,6 +122,8 @@
         </div>
       </div>
 
+      <div class="details__ghlnote" id="detGhlNote" hidden></div>
+
       <div class="details__section">
         <h3>Etiquetas</h3>
         <div class="tags" id="detTags"></div>
@@ -130,6 +132,16 @@
       <div class="details__section">
         <h3>Información</h3>
         <dl class="fields" id="detFields"></dl>
+      </div>
+
+      <div class="details__section" id="detOppsSection" hidden>
+        <h3>Oportunidades</h3>
+        <div id="detOpps"></div>
+      </div>
+
+      <div class="details__section" id="detCustomSection" hidden>
+        <h3>Campos personalizados</h3>
+        <dl class="fields" id="detCustom"></dl>
       </div>
 
       <div class="details__section">
@@ -170,6 +182,11 @@
         <div class="form-group">
           <label>URL webhook · Eliminar conversación <small>(POST)</small></label>
           <input type="url" id="cfgDeleteUrl" placeholder="https://tu-n8n/webhook/wa-delete-conversation" />
+        </div>
+
+        <div class="form-group">
+          <label>URL webhook · Datos GHL del contacto <small>(GET ?contactId=)</small></label>
+          <input type="url" id="cfgGhlUrl" placeholder="https://tu-n8n/webhook/wa-ghl-contact" />
         </div>
 
         <div class="form-group">
@@ -225,10 +242,10 @@
 
   <!-- Scripts clásicos (compatibles con file://, sin paso de build).
        ?v= = cache-busting: súbelo cuando cambies un .js para forzar recarga. -->
-  <script src="js/config.js?v=5"></script>
-  <script src="js/store.js?v=5"></script>
-  <script src="js/api.js?v=5"></script>
-  <script src="js/ui.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/config.js?v=6"></script>
+  <script src="js/store.js?v=6"></script>
+  <script src="js/api.js?v=6"></script>
+  <script src="js/ui.js?v=6"></script>
+  <script src="js/app.js?v=6"></script>
 </body>
 </html>

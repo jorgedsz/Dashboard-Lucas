@@ -61,6 +61,22 @@
       this._activeStatus = c ? c.lastStatus : null;
       UI.renderList();
       UI.renderThread();
+      this.loadGhl(c);
+    },
+
+    // ---------- datos del contacto en GoHighLevel ----------
+    async loadGhl(conv) {
+      if (!conv || !conv.contactId || !Store.settings.ghlUrl) return;
+      const cid = conv.contactId;
+      if (Object.prototype.hasOwnProperty.call(Store.ghlByContact, cid)) {
+        UI.renderDetails(conv); // ya cacheado (ok o null)
+        return;
+      }
+      UI.renderDetails(conv); // muestra "Cargando datos de GoHighLevel…"
+      let data = null;
+      try { data = await Api.getGhlContact(cid); } catch (_) {}
+      Store.ghlByContact[cid] = (data && data.ok) ? data : null;
+      if (Store.activeId === conv.id) UI.renderDetails(conv);
     },
 
     // ---------- eliminar conversación ----------
@@ -188,6 +204,7 @@
       $('#cfgConvUrl').value = s.convUrl;
       $('#cfgMsgUrl').value = s.msgUrl;
       $('#cfgDeleteUrl').value = s.deleteUrl;
+      $('#cfgGhlUrl').value = s.ghlUrl;
       $('#cfgPoll').value = String(s.pollInterval);
       $('#cfgToken').value = s.token;
       $('#settingsModal').hidden = false;
@@ -198,6 +215,7 @@
         convUrl: $('#cfgConvUrl').value.trim(),
         msgUrl: $('#cfgMsgUrl').value.trim(),
         deleteUrl: $('#cfgDeleteUrl').value.trim(),
+        ghlUrl: $('#cfgGhlUrl').value.trim(),
         pollInterval: Number($('#cfgPoll').value),
         token: $('#cfgToken').value.trim()
       });

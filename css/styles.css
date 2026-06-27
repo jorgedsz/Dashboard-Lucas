@@ -292,6 +292,28 @@ input, textarea, select { font-family: inherit; font-size: 14px; }
 .media-modal__noprev svg { width: 48px; height: 48px; color: var(--brand); }
 .media-modal__noprev p { font-size: 14px; color: var(--text-mute); }
 
+/* ===== Detalles: GHL (nota, oportunidades, custom fields) ===== */
+.details__ghlnote { margin: 6px 18px 0; font-size: 12px; color: var(--text-mute); }
+.opp {
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+  background: var(--panel);
+}
+.opp__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.opp__name { font-size: 13px; font-weight: 600; color: var(--text); word-break: break-word; }
+.opp__status {
+  flex-shrink: 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+  padding: 2px 7px; border-radius: 999px; background: rgba(0,0,0,.08); color: var(--text-soft);
+}
+[data-theme="dark"] .opp__status { background: rgba(255,255,255,.12); }
+.opp__status--open { background: rgba(47,109,246,.15); color: #2f6df6; }
+.opp__status--won  { background: rgba(26,161,121,.16); color: #1aa179; }
+.opp__status--lost,
+.opp__status--abandoned { background: rgba(239,68,68,.14); color: var(--danger); }
+.opp__path { font-size: 12px; color: var(--text-mute); margin-top: 4px; }
+.opp__value { font-size: 13px; font-weight: 700; color: var(--text); margin-top: 4px; }
+/* valores largos de custom fields: no romper el layout */
+#detCustom dd { white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; max-height: 160px; overflow: auto; }
+
 /* aviso ventana 24h */
 .window-warn {
   background: #fff7e6; border-top: 1px solid #ffe3a3; color: #8a5a00;

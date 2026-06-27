@@ -232,23 +232,79 @@
       $('#detAvatar').textContent = conv.avatar.initials;
       $('#detAvatar').style.background = conv.avatar.color;
       $('#detName').textContent = conv.name;
-      $('#detPhone').textContent = conv.phone;
-      $('#detTel').href = 'tel:' + conv.phone.replace(/\s/g, '');
-      $('#detMail').href = 'mailto:' + (conv.contact.email || '');
 
-      const tags = $('#detTags');
-      tags.innerHTML = conv.contact.tags.length
-        ? conv.contact.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')
+      const dbc = conv.contact || {};
+      const entry = conv.contactId && Store.ghlByContact ? Store.ghlByContact[conv.contactId] : undefined;
+      const g = (entry && entry.contact) ? entry.contact : null;
+
+      const phone = (g && g.phone) || conv.phone || '';
+      const email = (g && g.email) || dbc.email || '';
+      $('#detPhone').textContent = phone || (conv.contactId ? 'ID ' + conv.contactId : '');
+      $('#detTel').href = 'tel:' + String(phone).replace(/\s/g, '');
+      $('#detMail').href = 'mailto:' + email;
+
+      // nota de carga de GHL
+      const note = $('#detGhlNote');
+      if (note) {
+        if (conv.contactId && entry === undefined) { note.hidden = false; note.textContent = 'Cargando datos de GoHighLevel…'; }
+        else if (conv.contactId && entry === null) { note.hidden = false; note.textContent = 'No se pudieron cargar los datos de GHL.'; }
+        else { note.hidden = true; note.textContent = ''; }
+      }
+
+      // etiquetas (GHL si hay; si no, las de la BD)
+      const tags = (g && g.tags && g.tags.length) ? g.tags : (dbc.tags || []);
+      $('#detTags').innerHTML = tags.length
+        ? tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')
         : '<span style="color:#9aa3b2;font-size:13px">Sin etiquetas</span>';
 
+      // información
+      const fmtDate = (d) => { if (!d) return '—'; try { return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' }); } catch (_) { return '—'; } };
       const fields = [
-        ['Teléfono', conv.phone],
-        ['Email', conv.contact.email || '—'],
-        ['Empresa', conv.contact.company || '—'],
-        ['Origen', conv.contact.source || '—'],
-        ['Propietario', conv.contact.owner || '—']
+        ['Teléfono', phone || '—'],
+        ['Email', email || '—'],
+        ['Empresa', (g && g.companyName) || dbc.company || '—'],
+        ['Origen', (g && g.source) || dbc.source || '—']
       ];
+      if (g) {
+        if (g.type) fields.push(['Tipo', g.type]);
+        if (g.country) fields.push(['País', g.country]);
+        if (g.timezone) fields.push(['Zona horaria', g.timezone]);
+        fields.push(['Alta', fmtDate(g.dateAdded)]);
+        fields.push(['DND', g.dnd ? 'Sí' : 'No']);
+      } else if (dbc.owner) {
+        fields.push(['Propietario', dbc.owner]);
+      }
       $('#detFields').innerHTML = fields.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('');
+
+      // oportunidades
+      const oppsSec = $('#detOppsSection'), oppsBox = $('#detOpps');
+      const opps = (entry && entry.opportunities) || [];
+      if (oppsSec && oppsBox) {
+        if (opps.length) {
+          oppsSec.hidden = false;
+          oppsBox.innerHTML = opps.map(o => {
+            const st = (o.status || '').toLowerCase();
+            let money = '';
+            if (o.monetaryValue != null) { try { money = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(o.monetaryValue); } catch (_) { money = '$' + o.monetaryValue; } }
+            const path = [o.pipeline, o.stage].filter(Boolean).join(' ▸ ');
+            return `<div class="opp">
+              <div class="opp__top"><span class="opp__name">${esc(o.name || 'Oportunidad')}</span><span class="opp__status opp__status--${esc(st)}">${esc(o.status || '')}</span></div>
+              ${path ? `<div class="opp__path">${esc(path)}</div>` : ''}
+              ${money ? `<div class="opp__value">${esc(money)}</div>` : ''}
+            </div>`;
+          }).join('');
+        } else { oppsSec.hidden = true; oppsBox.innerHTML = ''; }
+      }
+
+      // campos personalizados
+      const cfSec = $('#detCustomSection'), cfBox = $('#detCustom');
+      const cf = (g && g.customFields) || [];
+      if (cfSec && cfBox) {
+        if (cf.length) {
+          cfSec.hidden = false;
+          cfBox.innerHTML = cf.map(f => `<div><dt>${esc(f.name)}</dt><dd>${esc(f.value)}</dd></div>`).join('');
+        } else { cfSec.hidden = true; cfBox.innerHTML = ''; }
+      }
 
       document.querySelectorAll('.pill').forEach(p => p.classList.toggle('pill--active', p.dataset.status === conv.status));
     },

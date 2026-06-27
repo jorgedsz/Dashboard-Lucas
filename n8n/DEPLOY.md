@@ -15,6 +15,7 @@ Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de M
 | WA · Save Outbound | INdmGsXWSafVvjJv | `/webhook/wa-save-out` (POST) — guardar mensaje saliente a mano |
 | WA · Get Media | KG3XFlA8lcbUmb3c | `/webhook/wa-media?id=` (GET) — sirve el binario guardado (bytea) con su Content-Type |
 | WA · Delete Conversation | 2ZsU5NHaKOJIvKyo | `/webhook/wa-delete-conversation` (POST) — elimina una conversación y sus mensajes (CASCADE) |
+| WA · GHL Contact | qSQTrDQcVhW4MPdq | `/webhook/wa-ghl-contact?contactId=` (GET) — trae datos del contacto de GoHighLevel |
 
 ## Guardado manual de mensajes (endpoints genéricos)
 
@@ -94,7 +95,33 @@ Borra la conversación y **todos sus mensajes** (FK `ON DELETE CASCADE`). El con
 se conserva. Respuesta: `{ "ok": true, "deleted": true, "id": "107" }` (o `deleted:false`
 si el id no existía). El dashboard lo llama desde el botón 🗑️ en la cabecera del hilo.
 
+## Datos del contacto en GoHighLevel
+
+**GET `/webhook/wa-ghl-contact?contactId=<ghl_contact_id>`** → trae de la API v2 de GHL
+(LeadConnector) los datos del contacto y los normaliza:
+
+```json
+{ "ok": true,
+  "contact": { "id","name","firstName","lastName","email","phone","companyName",
+               "source","type","country","timezone","dnd","dateAdded","dateUpdated",
+               "tags": [...], "customFields": [ { "name","value" } ] },
+  "opportunities": [ { "id","name","status","monetaryValue","pipeline","stage","source","createdAt" } ] }
+```
+
+Internamente hace 4 llamadas a `services.leadconnectorhq.com`: contacto, opportunities
+(por contacto), custom fields (para los nombres) y pipelines (para nombres de
+pipeline/etapa). Auth: credencial **HTTP Header Auth** `GHL API (PIT)` (id `se5cMpkyBB4gIyzH`)
+con un **Private Integration Token** de la subcuenta (scopes: View Contacts, View
+Opportunities, View Custom Fields). El `locationId` (`bzRd2deoIdOClJZ44bv5`) va fijo en las
+URLs del workflow. El dashboard lo llama al abrir cada conversación y lo muestra en el
+panel de detalles (tags, email, teléfono, info, custom fields y oportunidades).
+
+> El PIT NO está en el repo: vive cifrado en la credencial de n8n. Para reimportar en otra
+> instancia hay que crear esa credencial con un PIT válido.
+
 ## Credenciales
+- **GHL API (PIT):** `se5cMpkyBB4gIyzH` — HTTP Header Auth `Authorization: Bearer pit-...`
+  (Private Integration Token de la subcuenta; solo lectura).
 - **Postgres (en uso):** `2W6eREXRp7yllk50` — "WA Postgres Direct".
   Valores **directos** (no env vars), apuntando al **host público** del Postgres de Railway.
 - WhatsApp Business Cloud: `ULnicJG1cKVoq6dg` — Phone Number ID `1117263431478161`.

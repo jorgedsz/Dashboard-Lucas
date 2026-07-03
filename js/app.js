@@ -102,7 +102,38 @@
       let data = null;
       try { data = await Api.getGhlContact(cid); } catch (_) {}
       Store.ghlByContact[cid] = (data && data.ok) ? data : null;
+      this.applyBotStatus(conv);
       if (Store.activeId === conv.id) UI.renderDetails(conv);
+    },
+
+    // Lee el custom field "Bot Status" de GHL y refleja el estado abierta/cerrada.
+    applyBotStatus(conv) {
+      const entry = conv && conv.contactId ? Store.ghlByContact[conv.contactId] : null;
+      const cf = entry && entry.contact ? (entry.contact.customFields || []) : [];
+      const bs = cf.find(f => f.name === 'Bot Status');
+      if (bs) conv.status = (String(bs.value).trim().toUpperCase() === 'STOP') ? 'closed' : 'open';
+    },
+
+    // Cambia estado abierta/cerrada y escribe bot_status en GHL (STOP / vacío).
+    async setStatus(status) {
+      const c = Store.activeConversation(); if (!c) return;
+      c.status = status;
+      UI.renderDetails(c);
+      if (!c.contactId || !Store.settings.ghlFieldUrl) return;
+      const value = status === 'closed' ? 'STOP' : '';
+      try {
+        await Api.setGhlField(c.contactId, value);
+        // refleja en la caché para que un re-render no lo revierta
+        const entry = Store.ghlByContact[c.contactId];
+        if (entry && entry.contact) {
+          entry.contact.customFields = entry.contact.customFields || [];
+          const bs = entry.contact.customFields.find(f => f.name === 'Bot Status');
+          if (bs) bs.value = value; else entry.contact.customFields.push({ name: 'Bot Status', value });
+        }
+        UI.toast(status === 'closed' ? 'Cerrada · bot detenido (STOP)' : 'Abierta · bot reactivado');
+      } catch (e) {
+        UI.toast('No se pudo actualizar GHL: ' + e.message);
+      }
     },
 
     // ---------- eliminar conversación ----------
@@ -232,6 +263,7 @@
       $('#cfgMsgUrl').value = s.msgUrl;
       $('#cfgDeleteUrl').value = s.deleteUrl;
       $('#cfgGhlUrl').value = s.ghlUrl;
+      $('#cfgGhlFieldUrl').value = s.ghlFieldUrl;
       $('#cfgPoll').value = String(s.pollInterval);
       $('#cfgToken').value = s.token;
       $('#settingsModal').hidden = false;
@@ -243,6 +275,7 @@
         msgUrl: $('#cfgMsgUrl').value.trim(),
         deleteUrl: $('#cfgDeleteUrl').value.trim(),
         ghlUrl: $('#cfgGhlUrl').value.trim(),
+        ghlFieldUrl: $('#cfgGhlFieldUrl').value.trim(),
         pollInterval: Number($('#cfgPoll').value),
         token: $('#cfgToken').value.trim()
       });
@@ -282,10 +315,9 @@
       });
       // eliminar conversación
       $('#btnDelete').addEventListener('click', () => this.deleteConversation());
-      // estado abierta/cerrada
+      // estado abierta/cerrada (escribe bot_status en GHL)
       document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => {
-        const c = Store.activeConversation(); if (!c) return;
-        c.status = p.dataset.status; UI.renderDetails(c);
+        this.setStatus(p.dataset.status);
       }));
       // plantillas
       $('#btnTemplate').addEventListener('click', () => { $('#templateModal').hidden = false; });

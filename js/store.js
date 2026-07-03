@@ -15,6 +15,7 @@
     msgUrl: cfg.msgUrl || '',          // GET   -> mensajes de una conversación
     deleteUrl: cfg.deleteUrl || '',    // POST  -> eliminar una conversación
     ghlUrl: cfg.ghlUrl || '',          // GET   -> datos del contacto en GoHighLevel
+    ghlFieldUrl: cfg.ghlFieldUrl || '',// POST  -> escribe custom field (bot_status) en GHL
     pollInterval: cfg.pollInterval != null ? cfg.pollInterval : 10000, // ms; 0 = desactivado
     token: ''                          // header opcional x-dashboard-token
   };

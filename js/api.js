@@ -88,6 +88,19 @@
     },
 
     // ---------------------------------------------------------------
+    // Escribe el custom field bot_status del contacto en GHL.
+    // value: 'STOP' (cerrar → detener bot) o '' (abrir → reactivar).
+    // ---------------------------------------------------------------
+    async setGhlField(contactId, value) {
+      if (!S().ghlFieldUrl) return null;
+      return await http(S().ghlFieldUrl, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ contactId, value })
+      });
+    },
+
+    // ---------------------------------------------------------------
     // Sondeo de novedades (polling). n8n expone en convUrl las
     // conversaciones con su último mensaje y unreadCount actualizados.
     // ---------------------------------------------------------------

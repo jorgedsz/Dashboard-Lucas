@@ -1,0 +1,79 @@
+{
+  "name": "WA · GHL Set Field",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-ghl-set-field",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-setfield",
+      "name": "Webhook",
+      "webhookId": "wa-ghl-set-field-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = ($input.first().json.body) || {};\nconst contactId = b.contactId != null ? String(b.contactId).trim() : '';\nlet value = b.value;\nif (value == null) value = '';\nvalue = String(value);\nreturn [{ json: { contactId, value } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, 0],
+      "id": "code-setfield-parse",
+      "name": "Parse"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contactId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Version", "value": "2021-07-28" }, { "name": "Accept", "value": "application/json" } ] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { customFields: [ { id: 'M2ONiagYfBbAJrC9jhgO', value: $json.value } ] } }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 0],
+      "id": "http-setfield",
+      "name": "Update Contact",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = ($input.first() && $input.first().json) || {};\nconst ok = !!(r.contact && r.contact.id);\nreturn [{ json: { ok, contactId: r.contact ? r.contact.id : null } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 0],
+      "id": "code-setfield-resp",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 0],
+      "id": "resp-setfield",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse", "type": "main", "index": 0 }]] },
+    "Parse": { "main": [[{ "node": "Update Contact", "type": "main", "index": 0 }]] },
+    "Update Contact": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

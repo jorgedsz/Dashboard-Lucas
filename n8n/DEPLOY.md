@@ -16,6 +16,7 @@ Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de M
 | WA · Get Media | KG3XFlA8lcbUmb3c | `/webhook/wa-media?id=` (GET) — sirve el binario guardado (bytea) con su Content-Type |
 | WA · Delete Conversation | 2ZsU5NHaKOJIvKyo | `/webhook/wa-delete-conversation` (POST) — elimina una conversación y sus mensajes (CASCADE) |
 | WA · GHL Contact | qSQTrDQcVhW4MPdq | `/webhook/wa-ghl-contact?contactId=` (GET) — trae datos del contacto de GoHighLevel |
+| WA · GHL Set Field | KLSsv3sLlVtY2dDv | `/webhook/wa-ghl-set-field` (POST) — escribe el custom field `bot_status` del contacto |
 
 ## Guardado manual de mensajes (endpoints genéricos)
 
@@ -133,6 +134,16 @@ panel de detalles (tags, email, teléfono, info, custom fields y oportunidades).
 
 > El PIT NO está en el repo: vive cifrado en la credencial de n8n. Para reimportar en otra
 > instancia hay que crear esa credencial con un PIT válido.
+
+## Detener el bot al cerrar la conversación (custom field GHL)
+
+Custom field creado en GHL: **`Bot Status`** (id `M2ONiagYfBbAJrC9jhgO`, key `contact.bot_status`, TEXT).
+
+**POST `/webhook/wa-ghl-set-field`** con `{ "contactId":"...", "value":"STOP" }` (o `""`) hace
+`PUT /contacts/{id}` en GHL seteando ese custom field. El dashboard lo llama desde el toggle
+**Estado de conversación**: **Cerrada → `STOP`** (tu automatización/bot debe checar este field
+y no escribir si es `STOP`), **Abierta → `""`** (reactiva). Al abrir una conversación, el
+dashboard lee `bot_status` de GHL y refleja el toggle en abierta/cerrada.
 
 ## Credenciales
 - **GHL API (PIT):** `se5cMpkyBB4gIyzH` — HTTP Header Auth `Authorization: Bearer pit-...`

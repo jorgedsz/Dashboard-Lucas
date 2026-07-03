@@ -41,6 +41,7 @@
         UI.renderList();
         UI.renderTemplates();
         if (Store.activeId) UI.renderThread();
+        this.enrichNames();
       } catch (e) {
         UI.toast('Error al cargar: ' + e.message);
         $('#connBadge').className = 'conn conn--error';
@@ -62,6 +63,31 @@
       UI.renderList();
       UI.renderThread();
       this.loadGhl(c);
+    },
+
+    // ¿el texto parece un nombre real? (tiene al menos una letra)
+    isValidName(s) { try { return /\p{L}/u.test(String(s || '')); } catch (_) { return /[a-zA-Z]/.test(String(s || '')); } },
+
+    // Rellena nombres faltantes ("?", teléfonos, ". .") con el nombre de GHL.
+    // Solo consulta las que no tienen nombre válido; reusa la caché (sin repetir llamadas).
+    async enrichNames() {
+      const need = Store.conversations.filter(c => c.contactId && !this.isValidName(c.name));
+      let changed = false;
+      for (const c of need) {
+        let entry = Store.ghlByContact[c.contactId];
+        if (entry === undefined) {
+          try { const d = await Api.getGhlContact(c.contactId); entry = (d && d.ok) ? d : null; }
+          catch (_) { entry = null; }
+          Store.ghlByContact[c.contactId] = entry;
+        }
+        const gname = entry && entry.contact ? String(entry.contact.name || '').trim() : '';
+        if (this.isValidName(gname)) {
+          c.name = gname;
+          c.avatar = { initials: (gname.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase()) || '?', color: c.avatar.color };
+          changed = true;
+        }
+      }
+      if (changed) { UI.renderList(); if (Store.activeId) UI.renderThread(); }
     },
 
     // ---------- datos del contacto en GoHighLevel ----------
@@ -176,6 +202,7 @@
         Store.conversations = convs;
         this._listSig = sig;
         UI.renderList();
+        this.enrichNames();
       }
 
       // 2) Hilo activo: recarga mensajes solo si esa conversación tiene novedades

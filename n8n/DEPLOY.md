@@ -42,12 +42,27 @@ aceptan el mismo cuerpo genérico:
   "mediaMime": "application/pdf",        // opcional (alias: mimeType) — refuerza el render por tipo
   "filename": "cotizacion.pdf",          // opcional (alias: mediaFilename) — nombre mostrado en documentos
 
-  // --- adjuntos: opción 2 (subir el binario, p.ej. media de Meta) ---
+  // --- adjuntos: opción 2 (subir el binario en base64, p.ej. media de Meta) ---
   "mediaBase64": "<base64 del archivo>", // alias: mediaData. Acepta también data:...;base64,xxxx
   "mediaMime": "audio/ogg",              // recomendado cuando subes binario
   "filename": "nota.ogg"                 // opcional
 }
 ```
+
+**Opción 3 — subir el archivo BINARIO directo (multipart/form-data):** en vez de
+convertir a base64, manda el archivo tal cual + los campos como form-data. Ideal para
+enviar el binario desde un nodo HTTP Request de n8n sin Code node:
+
+```bash
+curl -X POST .../webhook/wa-save-in \
+  -F "file=@nota.ogg;type=audio/ogg" \
+  -F "contactId=..." -F "channel=whatsapp"
+```
+
+El webhook deja el archivo en la propiedad binaria y el `Normalize` lo lee con
+`getBinaryDataBuffer` → base64 → `bytea`. Si no mandas `type`, se **infiere del mime**
+(image/→image, audio/→audio, video/→video, resto→document). Los campos de texto van como
+campos del form-data. Sirve para las 3 vías: `mediaUrl` | `mediaBase64` | archivo binario.
 
 Respuesta: `{ "ok": true, "id": "3", "conversationId": "2" }`.
 

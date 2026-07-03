@@ -16,6 +16,7 @@
     deleteUrl: cfg.deleteUrl || '',    // POST  -> eliminar una conversación
     ghlUrl: cfg.ghlUrl || '',          // GET   -> datos del contacto en GoHighLevel
     ghlFieldUrl: cfg.ghlFieldUrl || '',// POST  -> escribe custom field (bot_status) en GHL
+    ghlNameUrl: cfg.ghlNameUrl || '',  // GET   -> nombre del contacto en GHL (liviano)
     pollInterval: cfg.pollInterval != null ? cfg.pollInterval : 10000, // ms; 0 = desactivado
     token: ''                          // header opcional x-dashboard-token
   };
@@ -38,7 +39,8 @@
     settings: loadSettings(),
     conversations: [],
     messagesByConv: {},
-    ghlByContact: {},     // cache de datos de GHL por contactId (sesión)
+    ghlByContact: {},     // cache de datos completos de GHL por contactId (sesión)
+    nameByContact: {},    // cache de nombre GHL por contactId (liviano)
     templates: cfg.templates || [],
     activeId: null,
     filter: 'all',       // all | unread | starred

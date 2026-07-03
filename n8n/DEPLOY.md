@@ -17,6 +17,7 @@ Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de M
 | WA · Delete Conversation | 2ZsU5NHaKOJIvKyo | `/webhook/wa-delete-conversation` (POST) — elimina una conversación y sus mensajes (CASCADE) |
 | WA · GHL Contact | qSQTrDQcVhW4MPdq | `/webhook/wa-ghl-contact?contactId=` (GET) — trae datos del contacto de GoHighLevel |
 | WA · GHL Set Field | KLSsv3sLlVtY2dDv | `/webhook/wa-ghl-set-field` (POST) — escribe el custom field `bot_status` del contacto |
+| WA · GHL Name | mDx7bwiiXXs6F0ME | `/webhook/wa-ghl-name?contactId=` (GET) — solo el nombre del contacto (liviano, 1 llamada) |
 
 ## Guardado manual de mensajes (endpoints genéricos)
 

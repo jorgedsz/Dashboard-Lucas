@@ -37,7 +37,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [400, 0],
+      "position": [420, -180],
       "id": "http-contact",
       "name": "Contact",
       "onError": "continueRegularOutput",
@@ -55,7 +55,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [600, 0],
+      "position": [420, -60],
       "id": "http-opps",
       "name": "Opportunities",
       "onError": "continueRegularOutput",
@@ -73,7 +73,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [800, 0],
+      "position": [420, 60],
       "id": "http-cf",
       "name": "Custom Fields",
       "onError": "continueRegularOutput",
@@ -91,11 +91,19 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1000, 0],
+      "position": [420, 180],
       "id": "http-pipes",
       "name": "Pipelines",
       "onError": "continueRegularOutput",
       "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+    },
+    {
+      "parameters": { "numberInputs": 4 },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [640, 0],
+      "id": "merge-ghl",
+      "name": "Merge"
     },
     {
       "parameters": {
@@ -103,7 +111,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1200, 0],
+      "position": [860, 0],
       "id": "code-ghl-format",
       "name": "Format"
     },
@@ -115,18 +123,24 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1400, 0],
+      "position": [1080, 0],
       "id": "resp-ghl",
       "name": "Respond"
     }
   ],
   "connections": {
     "Webhook": { "main": [[{ "node": "Parse", "type": "main", "index": 0 }]] },
-    "Parse": { "main": [[{ "node": "Contact", "type": "main", "index": 0 }]] },
-    "Contact": { "main": [[{ "node": "Opportunities", "type": "main", "index": 0 }]] },
-    "Opportunities": { "main": [[{ "node": "Custom Fields", "type": "main", "index": 0 }]] },
-    "Custom Fields": { "main": [[{ "node": "Pipelines", "type": "main", "index": 0 }]] },
-    "Pipelines": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Parse": { "main": [[
+      { "node": "Contact", "type": "main", "index": 0 },
+      { "node": "Opportunities", "type": "main", "index": 0 },
+      { "node": "Custom Fields", "type": "main", "index": 0 },
+      { "node": "Pipelines", "type": "main", "index": 0 }
+    ]] },
+    "Contact": { "main": [[{ "node": "Merge", "type": "main", "index": 0 }]] },
+    "Opportunities": { "main": [[{ "node": "Merge", "type": "main", "index": 1 }]] },
+    "Custom Fields": { "main": [[{ "node": "Merge", "type": "main", "index": 2 }]] },
+    "Pipelines": { "main": [[{ "node": "Merge", "type": "main", "index": 3 }]] },
+    "Merge": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
     "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
   },
   "settings": { "executionOrder": "v1" }

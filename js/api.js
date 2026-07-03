@@ -88,6 +88,15 @@
     },
 
     // ---------------------------------------------------------------
+    // Nombre del contacto en GHL (liviano, 1 sola llamada). GET ?contactId=
+    // ---------------------------------------------------------------
+    async getGhlName(contactId) {
+      if (!S().ghlNameUrl) return null;
+      const url = S().ghlNameUrl + (S().ghlNameUrl.includes('?') ? '&' : '?') + 'contactId=' + encodeURIComponent(contactId);
+      return await http(url, { method: 'GET', headers: headers() });
+    },
+
+    // ---------------------------------------------------------------
     // Escribe el custom field bot_status del contacto en GHL.
     // value: 'STOP' (cerrar → detener bot) o '' (abrir → reactivar).
     // ---------------------------------------------------------------

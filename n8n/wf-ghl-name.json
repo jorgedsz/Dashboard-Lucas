@@ -1,0 +1,76 @@
+{
+  "name": "WA · GHL Name",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "wa-ghl-name",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-ghlname",
+      "name": "Webhook",
+      "webhookId": "wa-ghl-name-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const q = ($input.first().json.query) || {};\nconst id = q.contactId ? String(q.contactId).trim() : '';\nreturn [{ json: { contactId: id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, 0],
+      "id": "code-ghlname-parse",
+      "name": "Parse"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.contactId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Version", "value": "2021-07-28" }, { "name": "Accept", "value": "application/json" } ] },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [400, 0],
+      "id": "http-ghlname",
+      "name": "Contact",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const c = (($input.first() && $input.first().json) || {}).contact || {};\nconst name = [c.firstName, c.lastName].filter(Boolean).join(' ').trim() || c.contactName || c.name || '';\nreturn [{ json: { ok: !!c.id, name, phone: c.phone || null } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 0],
+      "id": "code-ghlname-format",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [800, 0],
+      "id": "resp-ghlname",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Parse", "type": "main", "index": 0 }]] },
+    "Parse": { "main": [[{ "node": "Contact", "type": "main", "index": 0 }]] },
+    "Contact": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

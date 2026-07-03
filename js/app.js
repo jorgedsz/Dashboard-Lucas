@@ -71,19 +71,31 @@
     // Rellena nombres faltantes ("?", teléfonos, ". .") con el nombre de GHL.
     // Solo consulta las que no tienen nombre válido; reusa la caché (sin repetir llamadas).
     async enrichNames() {
-      const need = Store.conversations.filter(c => c.contactId && !this.isValidName(c.name));
+      if (!Store.settings.ghlNameUrl) return;
+      // primero aplica lo ya cacheado (tras un poll, sin llamadas nuevas)
+      this.applyResolvedNames();
+      const need = Store.conversations.filter(c => c.contactId && !this.isValidName(c.name) && !(c.contactId in Store.nameByContact));
+      if (!need.length) return;
+      const CAP = 5; // llamadas concurrentes máximas
+      for (let i = 0; i < need.length; i += CAP) {
+        const batch = need.slice(i, i + CAP);
+        await Promise.all(batch.map(async c => {
+          try { const d = await Api.getGhlName(c.contactId); Store.nameByContact[c.contactId] = (d && d.ok && this.isValidName(d.name)) ? String(d.name).trim() : null; }
+          catch (_) { Store.nameByContact[c.contactId] = null; }
+        }));
+        this.applyResolvedNames();
+      }
+    },
+
+    // Aplica los nombres ya resueltos (desde caché) a la lista, sin llamadas.
+    applyResolvedNames() {
       let changed = false;
-      for (const c of need) {
-        let entry = Store.ghlByContact[c.contactId];
-        if (entry === undefined) {
-          try { const d = await Api.getGhlContact(c.contactId); entry = (d && d.ok) ? d : null; }
-          catch (_) { entry = null; }
-          Store.ghlByContact[c.contactId] = entry;
-        }
-        const gname = entry && entry.contact ? String(entry.contact.name || '').trim() : '';
-        if (this.isValidName(gname)) {
-          c.name = gname;
-          c.avatar = { initials: (gname.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase()) || '?', color: c.avatar.color };
+      for (const c of Store.conversations) {
+        if (this.isValidName(c.name)) continue;
+        const nm = c.contactId ? Store.nameByContact[c.contactId] : null;
+        if (nm && this.isValidName(nm)) {
+          c.name = nm;
+          c.avatar = { initials: (nm.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase()) || '?', color: c.avatar.color };
           changed = true;
         }
       }

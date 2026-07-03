@@ -18,6 +18,7 @@ window.WA_CONFIG = {
   deleteUrl: 'https://primary-production-b7ae.up.railway.app/webhook/wa-delete-conversation',
   ghlUrl:      'https://primary-production-b7ae.up.railway.app/webhook/wa-ghl-contact',
   ghlFieldUrl: 'https://primary-production-b7ae.up.railway.app/webhook/wa-ghl-set-field',
+  ghlNameUrl:  'https://primary-production-b7ae.up.railway.app/webhook/wa-ghl-name',
 
   // Sondeo de novedades (ms). 0 = desactivado.
   pollInterval: 10000,

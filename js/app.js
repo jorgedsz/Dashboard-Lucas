@@ -332,7 +332,7 @@
       if (this._lamePromise) return this._lamePromise;
       this._lamePromise = new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = 'js/vendor/lame.all.js?v=14';
+        s.src = 'js/vendor/lame.all.js?v=15';
         s.onload = () => resolve();
         s.onerror = () => reject(new Error('encoder MP3 no disponible'));
         document.head.appendChild(s);
@@ -502,10 +502,11 @@
       $('#btnDelete').addEventListener('click', () => this.deleteConversation());
       // prender/apagar chatbot
       $('#botToggle').addEventListener('click', () => this.toggleBot());
-      // estado abierta/cerrada (escribe bot_status en GHL)
-      document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => {
-        this.setStatus(p.dataset.status);
-      }));
+      // abierta/cerrada (toggle; cerrar escribe STOP en GHL)
+      $('#convToggle').addEventListener('click', () => {
+        const c = Store.activeConversation(); if (!c) return;
+        this.setStatus(c.status === 'closed' ? 'open' : 'closed');
+      });
       // plantillas
       $('#btnTemplate').addEventListener('click', () => { $('#templateModal').hidden = false; });
       // tema claro/oscuro

@@ -318,7 +318,13 @@
         } else { cfSec.hidden = true; cfBox.innerHTML = ''; }
       }
 
-      document.querySelectorAll('.pill').forEach(p => p.classList.toggle('pill--active', p.dataset.status === conv.status));
+      const ct = $('#convToggle'), ctl = $('#convToggleLabel');
+      if (ct) {
+        const closed = conv.status === 'closed';
+        ct.classList.toggle('pill-toggle--off', closed);
+        ct.classList.toggle('pill-toggle--on', !closed);
+        if (ctl) ctl.textContent = closed ? 'Cerrada' : 'Abierta';
+      }
     },
 
     // ---------- plantillas ----------

@@ -378,6 +378,20 @@ input, textarea, select { font-family: inherit; font-size: 14px; }
 .details__head { padding: 26px 20px 20px; text-align: center; border-bottom: 1px solid var(--border-soft); }
 .details__head .avatar { margin: 0 auto 12px; }
 .details__name { font-size: 17px; font-weight: 700; }
+/* toggle Abierta/Cerrada (estilo pastilla, como el del bot) */
+.pill-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin: 8px auto 2px; padding: 5px 14px; border-radius: 20px;
+  font-size: 12.5px; font-weight: 700; cursor: pointer; border: 1px solid transparent;
+  transition: background .12s, color .12s;
+}
+.pill-toggle__dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.pill-toggle--on { background: #d8f5e3; color: #0f7a3d; }
+.pill-toggle--on:hover { background: #bdeecd; }
+.pill-toggle--off { background: #fde2e2; color: #b42318; }
+.pill-toggle--off:hover { background: #f9cccc; }
+[data-theme="dark"] .pill-toggle--on { background: rgba(26,161,121,.2); color: #34d399; }
+[data-theme="dark"] .pill-toggle--off { background: rgba(239,68,68,.18); color: #f87171; }
 .details__phone { font-size: 13px; color: var(--text-soft); margin-top: 2px; }
 .details__quick { display: flex; gap: 10px; justify-content: center; margin-top: 14px; }
 .qa { width: 40px; height: 40px; border-radius: 10px; background: var(--bg); color: var(--brand); display: grid; place-items: center; cursor: pointer; transition: background .12s; }

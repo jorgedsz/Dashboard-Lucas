@@ -329,6 +329,20 @@
       this._toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
     },
 
+    // ---------- barra de grabación de voz ----------
+    showRecording(on) {
+      const bar = $('#recBar'), row = document.querySelector('.composer__row');
+      if (bar) bar.hidden = !on;
+      if (row) row.style.display = on ? 'none' : '';
+      if (on) this.updateRecTime(0);
+    },
+    updateRecTime(ms) {
+      const el = $('#recTime');
+      if (!el) return;
+      const s = Math.floor(ms / 1000);
+      el.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    },
+
     scrollMessages() {
       const box = $('#messages');
       box.scrollTop = box.scrollHeight;

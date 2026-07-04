@@ -327,6 +327,14 @@ input, textarea, select { font-family: inherit; font-size: 14px; }
 .composer__spacer { flex: 1; }
 .composer__hint { font-size: 11px; color: var(--text-mute); }
 .composer__row { display: flex; align-items: flex-end; gap: 8px; }
+/* barra de grabación de voz */
+.composer__rec { display: flex; align-items: center; gap: 10px; padding: 4px 0; }
+.composer__rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); flex-shrink: 0; animation: recpulse 1s infinite; }
+@keyframes recpulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.composer__rec-time { font-size: 14px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.composer__rec-hint { font-size: 13px; color: var(--text-mute); }
+.composer__rec-cancel { color: var(--danger); }
+.composer__rec-cancel:hover { background: rgba(239,68,68,.12); }
 .composer textarea {
   flex: 1; resize: none; max-height: 140px; border: 1px solid var(--border);
   border-radius: 22px; padding: 11px 16px; outline: none; line-height: 1.4;

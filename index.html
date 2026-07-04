@@ -6,7 +6,7 @@
   <title>Conversaciones · WhatsApp Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=11" />
+  <link rel="stylesheet" href="css/styles.css?v=12" />
 </head>
 <body>
   <!-- ============ APP SHELL ============ -->
@@ -95,6 +95,9 @@
               <svg viewBox="0 0 24 24"><path d="M16.5 6v11.5a4 4 0 0 1-8 0V5a2.5 2.5 0 0 1 5 0v10.5a1 1 0 0 1-2 0V6H10v9.5a2.5 2.5 0 0 0 5 0V5a4 4 0 0 0-8 0v12.5a5.5 5.5 0 0 0 11 0V6h-1.5z"/></svg>
             </button>
             <input type="file" id="fileInput" hidden />
+            <button class="btn-icon" id="btnMic" title="Grabar nota de voz">
+              <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+            </button>
             <button class="btn-icon" title="Emoji">
               <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-3.5 7a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm7 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM12 17.5c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
             </button>
@@ -104,6 +107,16 @@
           <div class="composer__row">
             <textarea id="msgInput" rows="1" placeholder="Escribe un mensaje..."></textarea>
             <button id="btnSend" class="btn-send" title="Enviar">
+              <svg viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+          <div class="composer__rec" id="recBar" hidden>
+            <span class="composer__rec-dot"></span>
+            <span class="composer__rec-time" id="recTime">0:00</span>
+            <span class="composer__rec-hint">Grabando nota de voz…</span>
+            <div class="composer__spacer"></div>
+            <button class="btn-icon composer__rec-cancel" id="recCancel" title="Cancelar">✕</button>
+            <button id="recSend" class="btn-send" title="Enviar nota de voz">
               <svg viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
           </div>
@@ -248,10 +261,10 @@
 
   <!-- Scripts clásicos (compatibles con file://, sin paso de build).
        ?v= = cache-busting: súbelo cuando cambies un .js para forzar recarga. -->
-  <script src="js/config.js?v=11"></script>
-  <script src="js/store.js?v=11"></script>
-  <script src="js/api.js?v=11"></script>
-  <script src="js/ui.js?v=11"></script>
-  <script src="js/app.js?v=11"></script>
+  <script src="js/config.js?v=12"></script>
+  <script src="js/store.js?v=12"></script>
+  <script src="js/api.js?v=12"></script>
+  <script src="js/ui.js?v=12"></script>
+  <script src="js/app.js?v=12"></script>
 </body>
 </html>

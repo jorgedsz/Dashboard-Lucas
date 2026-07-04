@@ -252,6 +252,46 @@
       UI.renderThread(); UI.renderList();
     },
 
+    // ---------- grabar nota de voz ----------
+    async startRecording() {
+      if (this._rec) return;
+      const conv = Store.activeConversation();
+      if (!conv) { UI.toast('Selecciona una conversación primero'); return; }
+      if (!navigator.mediaDevices || !window.MediaRecorder) { UI.toast('Tu navegador no soporta grabación de audio'); return; }
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      catch (e) { UI.toast('No se pudo acceder al micrófono (permiso denegado)'); return; }
+      const prefer = ['audio/ogg;codecs=opus', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+      let mimeType = '';
+      for (const m of prefer) { try { if (window.MediaRecorder.isTypeSupported(m)) { mimeType = m; break; } } catch (_) {} }
+      let rec;
+      try { rec = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream); }
+      catch (e) { rec = new MediaRecorder(stream); }
+      this._rec = { rec, stream, chunks: [], mimeType: rec.mimeType || mimeType || 'audio/webm', start: Date.now(), send: false };
+      rec.ondataavailable = e => { if (e.data && e.data.size) this._rec.chunks.push(e.data); };
+      rec.onstop = () => this._onRecStop();
+      rec.start();
+      UI.showRecording(true);
+      this._recTimer = setInterval(() => { if (this._rec) UI.updateRecTime(Date.now() - this._rec.start); }, 200);
+    },
+    stopRecording(send) {
+      if (!this._rec) return;
+      this._rec.send = !!send;
+      clearInterval(this._recTimer);
+      try { this._rec.rec.stop(); } catch (_) {}
+      UI.showRecording(false);
+    },
+    _onRecStop() {
+      const r = this._rec; this._rec = null;
+      if (r && r.stream) { try { r.stream.getTracks().forEach(t => t.stop()); } catch (_) {} }
+      if (!r || !r.send || !r.chunks.length) return;
+      const baseMime = (r.mimeType || 'audio/webm').split(';')[0];
+      const blob = new Blob(r.chunks, { type: baseMime });
+      const ext = baseMime.includes('ogg') ? 'ogg' : baseMime.includes('mp4') ? 'm4a' : baseMime.includes('mpeg') ? 'mp3' : 'webm';
+      const file = new File([blob], 'nota-de-voz.' + ext, { type: baseMime });
+      this.sendFile(file);
+    },
+
     useTemplate(tpl) {
       $('#templateModal').hidden = true;
       const conv = Store.activeConversation();
@@ -369,6 +409,10 @@
         e.target.value = '';
         if (f) this.sendFile(f);
       });
+      // grabar nota de voz
+      $('#btnMic').addEventListener('click', () => this.startRecording());
+      $('#recCancel').addEventListener('click', () => this.stopRecording(false));
+      $('#recSend').addEventListener('click', () => this.stopRecording(true));
       // destacar
       $('#btnStar').addEventListener('click', () => {
         const c = Store.activeConversation(); if (!c) return;

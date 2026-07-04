@@ -1,0 +1,108 @@
+{
+  "name": "WA · Bot Toggle",
+  "nodes": [
+    {
+      "parameters": { "httpMethod": "GET", "path": "wa-bot-state", "responseMode": "responseNode", "options": { "allowedOrigins": "*" } },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, -120],
+      "id": "wh-state",
+      "name": "Webhook State",
+      "webhookId": "wa-bot-state-hook"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://n8n.lmconsultingai.com/api/v1/workflows/AxDev17DF6893YXl",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, -120],
+      "id": "http-get",
+      "name": "Get State",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "elV8hsViHhjVCO3t", "name": "n8n API (self)" } }
+    },
+    {
+      "parameters": { "jsCode": "const j = ($input.first() && $input.first().json) || {};\nreturn [{ json: { ok: true, active: j.active === true } }];" },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, -120],
+      "id": "code-state",
+      "name": "Format State"
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ $json }}", "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } } },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [660, -120],
+      "id": "resp-state",
+      "name": "Respond State"
+    },
+    {
+      "parameters": { "httpMethod": "POST", "path": "wa-bot-set", "responseMode": "responseNode", "options": { "allowedOrigins": "*" } },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 120],
+      "id": "wh-set",
+      "name": "Webhook Set",
+      "webhookId": "wa-bot-set-hook"
+    },
+    {
+      "parameters": { "jsCode": "const b = ($input.first().json.body) || {};\nconst active = (b.active === true || b.active === 'true' || b.active === 1 || b.active === '1');\nreturn [{ json: { active, action: active ? 'activate' : 'deactivate' } }];" },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 120],
+      "id": "code-parse",
+      "name": "Parse"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://n8n.lmconsultingai.com/api/v1/workflows/AxDev17DF6893YXl/{{ $json.action }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 120],
+      "id": "http-set",
+      "name": "Set State",
+      "onError": "continueRegularOutput",
+      "credentials": { "httpHeaderAuth": { "id": "elV8hsViHhjVCO3t", "name": "n8n API (self)" } }
+    },
+    {
+      "parameters": { "jsCode": "const j = ($input.first() && $input.first().json) || {};\nconst want = $('Parse').first().json.active;\nconst active = (typeof j.active === 'boolean') ? j.active : want;\nreturn [{ json: { ok: true, active } }];" },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 120],
+      "id": "code-setresp",
+      "name": "Format Set"
+    },
+    {
+      "parameters": { "respondWith": "json", "responseBody": "={{ $json }}", "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } } },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [880, 120],
+      "id": "resp-set",
+      "name": "Respond Set"
+    }
+  ],
+  "connections": {
+    "Webhook State": { "main": [[{ "node": "Get State", "type": "main", "index": 0 }]] },
+    "Get State": { "main": [[{ "node": "Format State", "type": "main", "index": 0 }]] },
+    "Format State": { "main": [[{ "node": "Respond State", "type": "main", "index": 0 }]] },
+    "Webhook Set": { "main": [[{ "node": "Parse", "type": "main", "index": 0 }]] },
+    "Parse": { "main": [[{ "node": "Set State", "type": "main", "index": 0 }]] },
+    "Set State": { "main": [[{ "node": "Format Set", "type": "main", "index": 0 }]] },
+    "Format Set": { "main": [[{ "node": "Respond Set", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

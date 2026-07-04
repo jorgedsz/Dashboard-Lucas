@@ -18,6 +18,8 @@
     ghlUrl: cfg.ghlUrl || '',          // GET   -> datos del contacto en GoHighLevel
     ghlFieldUrl: cfg.ghlFieldUrl || '',// POST  -> escribe custom field (bot_status) en GHL
     ghlNameUrl: cfg.ghlNameUrl || '',  // GET   -> nombre del contacto en GHL (liviano)
+    botStateUrl: cfg.botStateUrl || '',// GET   -> estado del chatbot (activo/inactivo)
+    botSetUrl: cfg.botSetUrl || '',    // POST  -> prender/apagar el chatbot
     pollInterval: cfg.pollInterval != null ? cfg.pollInterval : 10000, // ms; 0 = desactivado
     token: ''                          // header opcional x-dashboard-token
   };

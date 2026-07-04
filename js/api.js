@@ -88,6 +88,18 @@
     },
 
     // ---------------------------------------------------------------
+    // Chatbot on/off (activar/desactivar su workflow en n8n)
+    // ---------------------------------------------------------------
+    async getBotState() {
+      if (!S().botStateUrl) return null;
+      return await http(S().botStateUrl, { method: 'GET', headers: headers() });
+    },
+    async setBotState(active) {
+      if (!S().botSetUrl) throw new Error('Toggle del bot no configurado');
+      return await http(S().botSetUrl, { method: 'POST', headers: headers(), body: JSON.stringify({ active: !!active }) });
+    },
+
+    // ---------------------------------------------------------------
     // Enviar un adjunto por WhatsApp (multipart). Sube el archivo, se guarda
     // en la DB (aparece en el hilo) y se envía por la Cloud API.
     // Devuelve { ok, id, conversationId, wamid, sent }.

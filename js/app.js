@@ -16,6 +16,7 @@
       await this.refreshData();
       this.bindEvents();
       this.startPolling();
+      this.loadBotState();
     },
 
     // ---------- tema claro / oscuro ----------
@@ -30,6 +31,27 @@
       const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       this.applyTheme(next);
       try { localStorage.setItem('wa_dashboard_theme', next); } catch (_) {}
+    },
+
+    // ---------- chatbot on/off ----------
+    async loadBotState() {
+      if (!Store.settings.botStateUrl) { const b = document.querySelector('#botToggle'); if (b) b.hidden = true; return; }
+      try { const s = await Api.getBotState(); this._botActive = !!(s && s.active); UI.renderBotToggle(this._botActive); }
+      catch (_) {}
+    },
+    async toggleBot() {
+      if (!Store.settings.botSetUrl) return;
+      const next = !this._botActive;
+      UI.renderBotToggle(next, true);
+      try {
+        const s = await Api.setBotState(next);
+        this._botActive = (s && typeof s.active === 'boolean') ? s.active : next;
+        UI.renderBotToggle(this._botActive);
+        UI.toast(this._botActive ? 'Chatbot encendido' : 'Chatbot apagado');
+      } catch (e) {
+        UI.renderBotToggle(this._botActive);
+        UI.toast('No se pudo cambiar el chatbot');
+      }
     },
 
     // ---------- carga / recarga de datos ----------
@@ -310,7 +332,7 @@
       if (this._lamePromise) return this._lamePromise;
       this._lamePromise = new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = 'js/vendor/lame.all.js?v=13';
+        s.src = 'js/vendor/lame.all.js?v=14';
         s.onload = () => resolve();
         s.onerror = () => reject(new Error('encoder MP3 no disponible'));
         document.head.appendChild(s);
@@ -478,6 +500,8 @@
       });
       // eliminar conversación
       $('#btnDelete').addEventListener('click', () => this.deleteConversation());
+      // prender/apagar chatbot
+      $('#botToggle').addEventListener('click', () => this.toggleBot());
       // estado abierta/cerrada (escribe bot_status en GHL)
       document.querySelectorAll('.pill').forEach(p => p.addEventListener('click', () => {
         this.setStatus(p.dataset.status);

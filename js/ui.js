@@ -69,6 +69,18 @@
       b.textContent = 'LIVE';
     },
 
+    // ---------- botón prender/apagar chatbot ----------
+    renderBotToggle(active, loading) {
+      const btn = $('#botToggle');
+      if (!btn) return;
+      btn.hidden = false;
+      btn.classList.toggle('bot-toggle--on', !!active);
+      btn.classList.toggle('bot-toggle--off', !active);
+      btn.classList.toggle('is-loading', !!loading);
+      const label = $('#botToggleLabel');
+      if (label) label.textContent = active ? 'Bot ON' : 'Bot OFF';
+    },
+
     // ---------- lista de conversaciones ----------
     renderList() {
       const box = $('#convList');

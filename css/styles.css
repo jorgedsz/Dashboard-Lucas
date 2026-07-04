@@ -122,8 +122,23 @@ input, textarea, select { font-family: inherit; font-size: 14px; }
   display: flex; flex-direction: column; overflow: hidden;
 }
 .list__head { padding: 18px 16px 0; border-bottom: 1px solid var(--border-soft); }
-.list__title-row { display: flex; align-items: center; justify-content: space-between; }
+.list__title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.list__title-actions { display: flex; align-items: center; gap: 8px; }
 .list__head h1 { font-size: 18px; font-weight: 700; }
+/* botón prender/apagar chatbot */
+.bot-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  border: 1px solid transparent; cursor: pointer; transition: background .12s, color .12s, opacity .12s;
+}
+.bot-toggle svg { width: 15px; height: 15px; fill: currentColor; }
+.bot-toggle--on { background: #d8f5e3; color: #0f7a3d; }
+.bot-toggle--on:hover { background: #bdeecd; }
+.bot-toggle--off { background: var(--bg); color: var(--text-mute); }
+.bot-toggle--off:hover { background: var(--border); }
+[data-theme="dark"] .bot-toggle--on { background: rgba(26,161,121,.2); color: #34d399; }
+[data-theme="dark"] .bot-toggle--off { background: rgba(255,255,255,.06); color: var(--text-mute); }
+.bot-toggle.is-loading { opacity: .55; pointer-events: none; }
 .conn {
   font-size: 10px; font-weight: 700; letter-spacing: .5px;
   padding: 3px 8px; border-radius: 20px;

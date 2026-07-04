@@ -21,6 +21,10 @@ window.WA_CONFIG = {
   ghlFieldUrl: 'https://n8n.lmconsultingai.com/webhook/wa-ghl-set-field',
   ghlNameUrl:  'https://n8n.lmconsultingai.com/webhook/wa-ghl-name',
 
+  // Prender/apagar el chatbot (activar/desactivar su workflow en n8n)
+  botStateUrl: 'https://n8n.lmconsultingai.com/webhook/wa-bot-state',
+  botSetUrl:   'https://n8n.lmconsultingai.com/webhook/wa-bot-set',
+
   // Sondeo de novedades (ms). 0 = desactivado.
   pollInterval: 10000,
 

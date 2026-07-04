@@ -1,6 +1,6 @@
 # Despliegue n8n — WhatsApp Dashboard
 
-n8n: https://primary-production-b7ae.up.railway.app
+n8n: https://n8n.lmconsultingai.com
 Estado: **funcionando** (entrante, conversaciones, mensajes y verificación de Meta probados).
 
 ## Workflows desplegados (activos)
@@ -171,7 +171,7 @@ dashboard lee `bot_status` de GHL y refleja el toggle en abierta/cerrada.
 > (b) poner tu verify token real en el nodo "Check Token".
 
 ## Configurar el webhook en Meta
-- Callback URL: `https://primary-production-b7ae.up.railway.app/webhook/wa-incoming`
+- Callback URL: `https://n8n.lmconsultingai.com/webhook/wa-incoming`
 - Verify token: el valor real configurado en el nodo "Check Token".
 - Suscribir el campo **messages**.
 

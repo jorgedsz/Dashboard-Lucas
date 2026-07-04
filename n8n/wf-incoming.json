@@ -119,7 +119,7 @@
       "position": [660, 80],
       "id": "pg-insert",
       "name": "Insert Message",
-      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+      "credentials": { "postgres": { "id": "mw6gswun2IbcAW3E", "name": "WA Postgres Direct" } }
     },
     {
       "parameters": {
@@ -132,7 +132,7 @@
       "position": [660, 240],
       "id": "pg-status",
       "name": "Update Status",
-      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+      "credentials": { "postgres": { "id": "mw6gswun2IbcAW3E", "name": "WA Postgres Direct" } }
     }
   ],
   "connections": {

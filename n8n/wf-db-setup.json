@@ -26,7 +26,7 @@
       "position": [220, 0],
       "id": "pg-dbsetup",
       "name": "Create Tables",
-      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+      "credentials": { "postgres": { "id": "mw6gswun2IbcAW3E", "name": "WA Postgres Direct" } }
     },
     {
       "parameters": {

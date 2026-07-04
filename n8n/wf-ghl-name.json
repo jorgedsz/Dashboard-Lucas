@@ -41,7 +41,7 @@
       "id": "http-ghlname",
       "name": "Contact",
       "onError": "continueRegularOutput",
-      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+      "credentials": { "httpHeaderAuth": { "id": "OHoYrmCYCVP4RruL", "name": "GHL API (PIT)" } }
     },
     {
       "parameters": {

@@ -37,7 +37,7 @@
       "id": "pg-del",
       "name": "Delete Conversation",
       "alwaysOutputData": true,
-      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+      "credentials": { "postgres": { "id": "mw6gswun2IbcAW3E", "name": "WA Postgres Direct" } }
     },
     {
       "parameters": {

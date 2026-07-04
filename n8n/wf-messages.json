@@ -27,11 +27,11 @@
       "id": "pg-msg",
       "name": "Select Messages",
       "alwaysOutputData": true,
-      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+      "credentials": { "postgres": { "id": "mw6gswun2IbcAW3E", "name": "WA Postgres Direct" } }
     },
     {
       "parameters": {
-        "jsCode": "const BASE = 'https://primary-production-b7ae.up.railway.app';\nconst rows = $input.all().map(i=>i.json).filter(r=>r && r.id);\nconst messages = rows.map(r=>{let mediaUrl=r.media_url||null;const blob=(r.has_blob===true||r.has_blob==='true'||r.has_blob==='t');if(!mediaUrl&&blob)mediaUrl=BASE+'/webhook/wa-media?id='+r.id;return {id:String(r.id),conversationId:String(r.conversation_id),direction:r.direction,type:r.type||'text',text:r.text||'',template:r.template||null,mediaUrl,mediaMime:r.media_mime||null,mediaFilename:r.media_filename||null,timestamp:Number(r.timestamp)||0,status:r.status||'received',channel:r.channel||'whatsapp'};});\nreturn [{ json: { messages } }];"
+        "jsCode": "const BASE = 'https://n8n.lmconsultingai.com';\nconst rows = $input.all().map(i=>i.json).filter(r=>r && r.id);\nconst messages = rows.map(r=>{let mediaUrl=r.media_url||null;const blob=(r.has_blob===true||r.has_blob==='true'||r.has_blob==='t');if(!mediaUrl&&blob)mediaUrl=BASE+'/webhook/wa-media?id='+r.id;return {id:String(r.id),conversationId:String(r.conversation_id),direction:r.direction,type:r.type||'text',text:r.text||'',template:r.template||null,mediaUrl,mediaMime:r.media_mime||null,mediaFilename:r.media_filename||null,timestamp:Number(r.timestamp)||0,status:r.status||'received',channel:r.channel||'whatsapp'};});\nreturn [{ json: { messages } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

@@ -9,16 +9,16 @@
    ========================================================= */
 window.WA_CONFIG = {
   // Base de tu instancia n8n
-  n8nBase: 'https://primary-production-b7ae.up.railway.app',
+  n8nBase: 'https://n8n.lmconsultingai.com',
 
   // Endpoints (webhooks de producción)
-  sendUrl:   'https://primary-production-b7ae.up.railway.app/webhook/wa-send',
-  convUrl:   'https://primary-production-b7ae.up.railway.app/webhook/wa-conversations',
-  msgUrl:    'https://primary-production-b7ae.up.railway.app/webhook/wa-messages',
-  deleteUrl: 'https://primary-production-b7ae.up.railway.app/webhook/wa-delete-conversation',
-  ghlUrl:      'https://primary-production-b7ae.up.railway.app/webhook/wa-ghl-contact',
-  ghlFieldUrl: 'https://primary-production-b7ae.up.railway.app/webhook/wa-ghl-set-field',
-  ghlNameUrl:  'https://primary-production-b7ae.up.railway.app/webhook/wa-ghl-name',
+  sendUrl:   'https://n8n.lmconsultingai.com/webhook/wa-send',
+  convUrl:   'https://n8n.lmconsultingai.com/webhook/wa-conversations',
+  msgUrl:    'https://n8n.lmconsultingai.com/webhook/wa-messages',
+  deleteUrl: 'https://n8n.lmconsultingai.com/webhook/wa-delete-conversation',
+  ghlUrl:      'https://n8n.lmconsultingai.com/webhook/wa-ghl-contact',
+  ghlFieldUrl: 'https://n8n.lmconsultingai.com/webhook/wa-ghl-set-field',
+  ghlNameUrl:  'https://n8n.lmconsultingai.com/webhook/wa-ghl-name',
 
   // Sondeo de novedades (ms). 0 = desactivado.
   pollInterval: 10000,

@@ -30,7 +30,7 @@
       "position": [220, 0],
       "id": "wa-send-node",
       "name": "Send WhatsApp",
-      "credentials": { "whatsAppApi": { "id": "ULnicJG1cKVoq6dg", "name": "WhatsApp account" } }
+      "credentials": { "whatsAppApi": { "id": "C3ukGXuVlGXeAMg5", "name": "WhatsApp account" } }
     },
     {
       "parameters": {
@@ -43,7 +43,7 @@
       "position": [440, 0],
       "id": "pg-send",
       "name": "Save Outgoing",
-      "credentials": { "postgres": { "id": "2W6eREXRp7yllk50", "name": "WA Postgres Direct" } }
+      "credentials": { "postgres": { "id": "mw6gswun2IbcAW3E", "name": "WA Postgres Direct" } }
     },
     {
       "parameters": {

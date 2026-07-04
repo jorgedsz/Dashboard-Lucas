@@ -41,7 +41,7 @@
       "id": "http-contact",
       "name": "Contact",
       "onError": "continueRegularOutput",
-      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+      "credentials": { "httpHeaderAuth": { "id": "OHoYrmCYCVP4RruL", "name": "GHL API (PIT)" } }
     },
     {
       "parameters": {
@@ -59,7 +59,7 @@
       "id": "http-opps",
       "name": "Opportunities",
       "onError": "continueRegularOutput",
-      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+      "credentials": { "httpHeaderAuth": { "id": "OHoYrmCYCVP4RruL", "name": "GHL API (PIT)" } }
     },
     {
       "parameters": {
@@ -77,7 +77,7 @@
       "id": "http-cf",
       "name": "Custom Fields",
       "onError": "continueRegularOutput",
-      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+      "credentials": { "httpHeaderAuth": { "id": "OHoYrmCYCVP4RruL", "name": "GHL API (PIT)" } }
     },
     {
       "parameters": {
@@ -95,7 +95,7 @@
       "id": "http-pipes",
       "name": "Pipelines",
       "onError": "continueRegularOutput",
-      "credentials": { "httpHeaderAuth": { "id": "se5cMpkyBB4gIyzH", "name": "GHL API (PIT)" } }
+      "credentials": { "httpHeaderAuth": { "id": "OHoYrmCYCVP4RruL", "name": "GHL API (PIT)" } }
     },
     {
       "parameters": { "numberInputs": 4 },

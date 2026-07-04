@@ -281,15 +281,73 @@
       try { this._rec.rec.stop(); } catch (_) {}
       UI.showRecording(false);
     },
-    _onRecStop() {
+    async _onRecStop() {
       const r = this._rec; this._rec = null;
       if (r && r.stream) { try { r.stream.getTracks().forEach(t => t.stop()); } catch (_) {} }
       if (!r || !r.send || !r.chunks.length) return;
       const baseMime = (r.mimeType || 'audio/webm').split(';')[0];
       const blob = new Blob(r.chunks, { type: baseMime });
-      const ext = baseMime.includes('ogg') ? 'ogg' : baseMime.includes('mp4') ? 'm4a' : baseMime.includes('mpeg') ? 'mp3' : 'webm';
-      const file = new File([blob], 'nota-de-voz.' + ext, { type: baseMime });
-      this.sendFile(file);
+      // formatos que WhatsApp acepta directo
+      if (/(ogg|mpeg|mp4|aac|amr)/.test(baseMime)) {
+        const ext = baseMime.includes('ogg') ? 'ogg' : baseMime.includes('mp4') ? 'm4a' : 'mp3';
+        this.sendFile(new File([blob], 'nota-de-voz.' + ext, { type: baseMime }));
+        return;
+      }
+      // Chrome graba webm -> WhatsApp no lo acepta -> convertir a MP3 en el navegador
+      UI.toast('Procesando audio…');
+      try {
+        const mp3 = await this.blobToMp3(blob);
+        this.sendFile(new File([mp3], 'nota-de-voz.mp3', { type: 'audio/mpeg' }));
+      } catch (e) {
+        this.sendFile(new File([blob], 'nota-de-voz.webm', { type: baseMime }));
+        UI.toast('No se pudo convertir a MP3; enviado como está');
+      }
+    },
+
+    // carga perezosa del encoder MP3 (lamejs), solo la 1ª vez que se graba
+    ensureLame() {
+      if (window.lamejs && window.lamejs.Mp3Encoder) return Promise.resolve();
+      if (this._lamePromise) return this._lamePromise;
+      this._lamePromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'js/vendor/lame.all.js?v=13';
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('encoder MP3 no disponible'));
+        document.head.appendChild(s);
+      });
+      return this._lamePromise;
+    },
+
+    async blobToMp3(blob) {
+      await this.ensureLame();
+      if (!window.lamejs || !window.lamejs.Mp3Encoder) throw new Error('encoder no disponible');
+      const arrayBuf = await blob.arrayBuffer();
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AC();
+      const audioBuf = await ctx.decodeAudioData(arrayBuf);
+      try { ctx.close(); } catch (_) {}
+      const sampleRate = audioBuf.sampleRate;
+      const channels = audioBuf.numberOfChannels > 1 ? 2 : 1;
+      const left = this._f32ToI16(audioBuf.getChannelData(0));
+      const right = channels === 2 ? this._f32ToI16(audioBuf.getChannelData(1)) : null;
+      const enc = new window.lamejs.Mp3Encoder(channels, sampleRate, 128);
+      const block = 1152, out = [];
+      for (let i = 0; i < left.length; i += block) {
+        const l = left.subarray(i, i + block);
+        const chunk = channels === 2 ? enc.encodeBuffer(l, right.subarray(i, i + block)) : enc.encodeBuffer(l);
+        if (chunk.length) out.push(new Int8Array(chunk));
+      }
+      const end = enc.flush();
+      if (end.length) out.push(new Int8Array(end));
+      return new Blob(out, { type: 'audio/mpeg' });
+    },
+    _f32ToI16(f32) {
+      const out = new Int16Array(f32.length);
+      for (let i = 0; i < f32.length; i++) {
+        const s = Math.max(-1, Math.min(1, f32[i]));
+        out[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      return out;
     },
 
     useTemplate(tpl) {

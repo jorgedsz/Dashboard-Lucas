@@ -88,6 +88,30 @@
     },
 
     // ---------------------------------------------------------------
+    // Enviar un adjunto por WhatsApp (multipart). Sube el archivo, se guarda
+    // en la DB (aparece en el hilo) y se envía por la Cloud API.
+    // Devuelve { ok, id, conversationId, wamid, sent }.
+    // ---------------------------------------------------------------
+    async sendMedia(file, meta) {
+      if (!S().sendMediaUrl) throw new Error('Envío de adjuntos no configurado');
+      const fd = new FormData();
+      fd.append('file', file, file.name);
+      fd.append('conversationId', meta.conversationId || '');
+      fd.append('contactId', meta.contactId || '');
+      fd.append('to', meta.to || '');
+      fd.append('channel', meta.channel || 'whatsapp');
+      fd.append('type', meta.type || 'document');
+      fd.append('filename', file.name);
+      if (meta.text) fd.append('text', meta.text);
+      const h = {};
+      if (S().token) h['x-dashboard-token'] = S().token;
+      const res = await fetch(S().sendMediaUrl, { method: 'POST', headers: h, body: fd });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const t = await res.text();
+      return t ? JSON.parse(t) : null;
+    },
+
+    // ---------------------------------------------------------------
     // Nombre del contacto en GHL (liviano, 1 sola llamada). GET ?contactId=
     // ---------------------------------------------------------------
     async getGhlName(contactId) {

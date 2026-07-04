@@ -210,6 +210,48 @@
       UI.renderList();
     },
 
+    // ---------- enviar adjunto (documento / imagen / audio / video) ----------
+    async sendFile(file) {
+      const conv = Store.activeConversation();
+      if (!conv) { UI.toast('Selecciona una conversación primero'); return; }
+      if (!Store.settings.sendMediaUrl) { UI.toast('Envío de adjuntos no configurado'); return; }
+      const mime = file.type || 'application/octet-stream';
+      let type = 'document';
+      if (mime.startsWith('image/')) type = 'image';
+      else if (mime.startsWith('audio/')) type = 'audio';
+      else if (mime.startsWith('video/')) type = 'video';
+
+      const tmpUrl = URL.createObjectURL(file); // vista previa inmediata
+      const optimistic = {
+        id: 'tmp' + Date.now(), conversationId: conv.id, direction: 'out', type,
+        text: '', mediaUrl: tmpUrl, mediaMime: mime, mediaFilename: file.name,
+        channel: conv.channel, timestamp: Date.now(), status: 'sent'
+      };
+      Store.addMessage(conv.id, optimistic);
+      UI.renderThread(); UI.renderList();
+
+      try {
+        const res = await Api.sendMedia(file, {
+          conversationId: conv.id,
+          contactId: conv.contactId || '',
+          to: conv.phone ? conv.phone.replace(/[^\d]/g, '') : '',
+          channel: conv.channel, type
+        });
+        if (res && res.id) optimistic.id = res.id;
+        if (res && res.sent === false) {
+          optimistic.status = 'failed';
+          UI.toast('Guardado, pero WhatsApp no lo entregó (¿fuera de la ventana de 24 h?)');
+        } else {
+          optimistic.status = 'delivered';
+          UI.toast('Adjunto enviado');
+        }
+      } catch (e) {
+        optimistic.status = 'failed';
+        UI.toast('Error al enviar: ' + e.message);
+      }
+      UI.renderThread(); UI.renderList();
+    },
+
     useTemplate(tpl) {
       $('#templateModal').hidden = true;
       const conv = Store.activeConversation();
@@ -320,6 +362,13 @@
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.handleSend(); }
       });
       $('#btnSend').addEventListener('click', () => this.handleSend());
+      // adjuntar archivo (documento / imagen / etc.)
+      $('#btnAttach').addEventListener('click', () => $('#fileInput').click());
+      $('#fileInput').addEventListener('change', e => {
+        const f = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (f) this.sendFile(f);
+      });
       // destacar
       $('#btnStar').addEventListener('click', () => {
         const c = Store.activeConversation(); if (!c) return;

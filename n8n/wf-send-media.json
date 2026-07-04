@@ -1,0 +1,103 @@
+{
+  "name": "WA · Send Media",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wa-send-media",
+        "responseMode": "responseNode",
+        "options": { "allowedOrigins": "*" }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [0, 0],
+      "id": "wh-sendmedia",
+      "name": "Webhook",
+      "webhookId": "wa-send-media-hook"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inp = $input.first();\nconst b = (inp.json && inp.json.body) || {};\nconst ts = Math.floor(Date.now()/1000);\nconst phone = b.phone ? String(b.phone).replace(/[^\\d]/g,'') : null;\nconst to = b.to ? String(b.to).replace(/[^\\d]/g,'') : (phone || null);\nconst ch = ['whatsapp','instagram','facebook'].includes(String(b.channel||'').toLowerCase()) ? String(b.channel).toLowerCase() : 'whatsapp';\nlet mediaMime = b.mediaMime || null;\nlet mediaName = b.filename || null;\nlet mediaB64 = b.mediaBase64 || null;\nif (mediaB64) mediaB64 = String(mediaB64).replace(/^data:[^;]+;base64,/, '').replace(/\\s/g, '');\nif (!mediaB64 && inp.binary) { try { const key = Object.keys(inp.binary)[0]; if (key) { const bd = inp.binary[key] || {}; const buf = await this.helpers.getBinaryDataBuffer(0, key); mediaB64 = buf.toString('base64'); if (!mediaMime) mediaMime = bd.mimeType || null; if (!mediaName) mediaName = bd.fileName || null; } } catch(e){} }\nconst caption = b.text || b.caption || '';\nconst VALID = ['image','audio','video','document'];\nlet type = String(b.type||'').toLowerCase();\nif (!VALID.includes(type)) { const m = (mediaMime||'').toLowerCase(); if (m.startsWith('image/')) type='image'; else if (m.startsWith('audio/')) type='audio'; else if (m.startsWith('video/')) type='video'; else type='document'; }\nconst LBL = { image:'\\uD83D\\uDCF7 Imagen', audio:'\\uD83C\\uDFB5 Audio', video:'\\uD83C\\uDFAC Video', document:('\\uD83D\\uDCC4 '+(mediaName||'Documento')) };\nconst preview = caption || LBL[type];\nreturn [{ json: { contactId: b.contactId!=null ? String(b.contactId) : null, name: b.name||null, text: caption, wamid: null, ts, type, direction: 'out', status: 'sent', phone, channel: ch, mediaUrl: null, mediaMime, mediaName, preview, mediaB64, to, caption, filename: mediaName || 'documento' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, 0],
+      "id": "code-sm-norm",
+      "name": "Normalize"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH existing AS (SELECT id FROM contacts WHERE ($1 IS NOT NULL AND ghl_contact_id = $1) OR ($9 IS NOT NULL AND phone = $9) ORDER BY CASE WHEN ghl_contact_id = $1 THEN 0 ELSE 1 END LIMIT 1), upd AS (UPDATE contacts SET ghl_contact_id = COALESCE(contacts.ghl_contact_id, $1), name = COALESCE($2, contacts.name), phone = COALESCE($9, contacts.phone) WHERE id = (SELECT id FROM existing) RETURNING id), ins AS (INSERT INTO contacts (ghl_contact_id, name, phone) SELECT $1, $2, $9 WHERE NOT EXISTS (SELECT 1 FROM existing) RETURNING id), c AS (SELECT id FROM upd UNION ALL SELECT id FROM ins), conv AS (INSERT INTO conversations (contact_id, channel, last_message, last_message_at, last_direction, last_status, last_inbound, unread_count, status, updated_at) SELECT c.id, $10, $14, to_timestamp(($5)::double precision), $7, $8, NULL, 0, 'open', now() FROM c ON CONFLICT (contact_id) DO UPDATE SET channel = EXCLUDED.channel, last_message = EXCLUDED.last_message, last_message_at = EXCLUDED.last_message_at, last_direction = EXCLUDED.last_direction, last_status = EXCLUDED.last_status, status='open', updated_at=now() RETURNING id) INSERT INTO messages (conversation_id, wamid, direction, type, text, status, channel, media_url, media_mime, media_filename, media_data, created_at) SELECT conv.id, $4, $7, $6, $3, $8, $10, $11, $12, $13, CASE WHEN $15 IS NULL OR $15 = '' THEN NULL ELSE decode($15, 'base64') END, to_timestamp(($5)::double precision) FROM conv RETURNING id, conversation_id;",
+        "options": { "queryReplacement": "={{ [ $json.contactId, $json.name, $json.text, $json.wamid, $json.ts, $json.type, $json.direction, $json.status, $json.phone, $json.channel, $json.mediaUrl, $json.mediaMime, $json.mediaName, $json.preview, $json.mediaB64 ] }}" }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [400, 0],
+      "id": "pg-sendmedia",
+      "name": "Store Message",
+      "alwaysOutputData": true,
+      "credentials": { "postgres": { "id": "mw6gswun2IbcAW3E", "name": "WA Postgres Direct" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const pg = ($input.first() && $input.first().json) || {};\nconst norm = $('Normalize').first().json;\nconst id = pg.id != null ? String(pg.id) : null;\nconst mediaUrl = id ? ('https://n8n.lmconsultingai.com/webhook/wa-media?id=' + id) : null;\nconst t = norm.type;\nconst media = { link: mediaUrl };\nif (t === 'document') media.filename = norm.filename;\nif (norm.caption && t !== 'audio') media.caption = norm.caption;\nconst waBody = { messaging_product: 'whatsapp', to: norm.to, type: t };\nwaBody[t] = media;\nreturn [{ json: { id, conversationId: pg.conversation_id != null ? String(pg.conversation_id) : null, waBody, hasUrl: !!mediaUrl } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 0],
+      "id": "code-sm-build",
+      "name": "Build URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/302766349596365/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.waBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 0],
+      "id": "http-wa-send",
+      "name": "Send WhatsApp",
+      "onError": "continueRegularOutput",
+      "credentials": { "whatsAppApi": { "id": "C3ukGXuVlGXeAMg5", "name": "WhatsApp account" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = ($input.first() && $input.first().json) || {};\nconst bu = $('Build URL').first().json;\nconst wamid = (r.messages && r.messages[0]) ? r.messages[0].id : null;\nreturn [{ json: { ok: true, id: bu.id, conversationId: bu.conversationId, wamid, sent: !!wamid } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 0],
+      "id": "code-sm-resp",
+      "name": "Format"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": { "responseHeaders": { "entries": [{ "name": "Access-Control-Allow-Origin", "value": "*" }] } }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1200, 0],
+      "id": "resp-sendmedia",
+      "name": "Respond"
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Normalize", "type": "main", "index": 0 }]] },
+    "Normalize": { "main": [[{ "node": "Store Message", "type": "main", "index": 0 }]] },
+    "Store Message": { "main": [[{ "node": "Build URL", "type": "main", "index": 0 }]] },
+    "Build URL": { "main": [[{ "node": "Send WhatsApp", "type": "main", "index": 0 }]] },
+    "Send WhatsApp": { "main": [[{ "node": "Format", "type": "main", "index": 0 }]] },
+    "Format": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

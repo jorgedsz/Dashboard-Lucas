@@ -12,7 +12,8 @@ window.WA_CONFIG = {
   n8nBase: 'https://n8n.lmconsultingai.com',
 
   // Endpoints (webhooks de producción)
-  sendUrl:   'https://n8n.lmconsultingai.com/webhook/wa-send',
+  sendUrl:      'https://n8n.lmconsultingai.com/webhook/wa-send',
+  sendMediaUrl: 'https://n8n.lmconsultingai.com/webhook/wa-send-media',
   convUrl:   'https://n8n.lmconsultingai.com/webhook/wa-conversations',
   msgUrl:    'https://n8n.lmconsultingai.com/webhook/wa-messages',
   deleteUrl: 'https://n8n.lmconsultingai.com/webhook/wa-delete-conversation',

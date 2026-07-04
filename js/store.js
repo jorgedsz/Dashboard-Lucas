@@ -11,6 +11,7 @@
 
   const defaultSettings = {
     sendUrl: cfg.sendUrl || '',        // POST  -> enviar mensaje (n8n -> WhatsApp Cloud API)
+    sendMediaUrl: cfg.sendMediaUrl || '', // POST (multipart) -> enviar adjunto por WhatsApp
     convUrl: cfg.convUrl || '',        // GET   -> lista de conversaciones
     msgUrl: cfg.msgUrl || '',          // GET   -> mensajes de una conversación
     deleteUrl: cfg.deleteUrl || '',    // POST  -> eliminar una conversación
@@ -62,7 +63,9 @@
       (this.messagesByConv[convId] = this.messagesByConv[convId] || []).push(msg);
       const conv = this.conversations.find(c => c.id === convId);
       if (conv) {
-        conv.lastMessage = msg.text || '[adjunto]';
+        conv.lastMessage = msg.text || (msg.mediaUrl
+          ? (msg.type === 'image' ? '📷 Imagen' : msg.type === 'audio' ? '🎵 Audio' : msg.type === 'video' ? '🎬 Video' : '📄 ' + (msg.mediaFilename || 'Documento'))
+          : '[adjunto]');
         conv.lastMessageAt = msg.timestamp;
         conv.lastDirection = msg.direction;
         conv.lastStatus = msg.status;

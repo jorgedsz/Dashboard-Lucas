@@ -6,7 +6,7 @@
   <title>Conversaciones · WhatsApp Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/styles.css?v=15" />
+  <link rel="stylesheet" href="css/styles.css?v=16" />
 </head>
 <body>
   <!-- ============ APP SHELL ============ -->
@@ -56,6 +56,7 @@
           <button class="tab tab--active" data-filter="all">Todas</button>
           <button class="tab" data-filter="unread">No leídas</button>
           <button class="tab" data-filter="starred">Destacadas</button>
+          <button class="tab tab--handoff" data-filter="handoff">Handoff<span class="tab__count" id="handoffCount"></span></button>
         </div>
       </header>
       <div id="convList" class="list__body"><!-- conversaciones inyectadas --></div>
@@ -264,10 +265,10 @@
 
   <!-- Scripts clásicos (compatibles con file://, sin paso de build).
        ?v= = cache-busting: súbelo cuando cambies un .js para forzar recarga. -->
-  <script src="js/config.js?v=15"></script>
-  <script src="js/store.js?v=15"></script>
-  <script src="js/api.js?v=15"></script>
-  <script src="js/ui.js?v=15"></script>
-  <script src="js/app.js?v=15"></script>
+  <script src="js/config.js?v=16"></script>
+  <script src="js/store.js?v=16"></script>
+  <script src="js/api.js?v=16"></script>
+  <script src="js/ui.js?v=16"></script>
+  <script src="js/app.js?v=16"></script>
 </body>
 </html>

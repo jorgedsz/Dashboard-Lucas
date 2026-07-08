@@ -69,6 +69,14 @@
       b.textContent = 'LIVE';
     },
 
+    // ---------- contador de la pestaña Handoff ----------
+    renderHandoffCount(n) {
+      const el2 = $('#handoffCount');
+      if (el2) el2.textContent = n > 0 ? ' ' + n : '';
+      const tab = document.querySelector('.tab[data-filter="handoff"]');
+      if (tab) tab.classList.toggle('tab--has', n > 0);
+    },
+
     // ---------- botón prender/apagar chatbot ----------
     renderBotToggle(active, loading) {
       const btn = $('#botToggle');
@@ -93,7 +101,8 @@
       list.forEach(c => {
         const active = c.id === Store.activeId;
         const cm = chMeta(c.channel);
-        const node = el('div', 'conv' + (active ? ' conv--active' : '') + (c.unreadCount > 0 ? ' conv--unread' : ''));
+        const handoff = c.contactId && Store.handoffIds && Store.handoffIds.has(c.contactId);
+        const node = el('div', 'conv' + (active ? ' conv--active' : '') + (c.unreadCount > 0 ? ' conv--unread' : '') + (handoff ? ' conv--handoff' : ''));
         const tick = c.lastDirection === 'out' ? `<span class="tick ${c.lastStatus === 'read' ? 'read' : ''}">${TICK[c.lastStatus] || TICK.sent}</span> ` : '';
         node.innerHTML = `
           <div class="conv__avatar">
@@ -106,6 +115,7 @@
               <span class="conv__time">${relList(c.lastMessageAt)}</span>
             </div>
             <div class="conv__bottom">
+              ${handoff ? '<span class="conv__handoff">Handoff</span>' : ''}
               <span class="conv__preview">${tick}${esc(c.lastMessage)}</span>
               ${c.unreadCount > 0 ? `<span class="conv__badge">${c.unreadCount}</span>` : ''}
             </div>

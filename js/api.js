@@ -88,6 +88,14 @@
     },
 
     // ---------------------------------------------------------------
+    // Contactos con etiqueta "handoff" en GHL. GET -> { contactIds: [...] }
+    // ---------------------------------------------------------------
+    async getHandoffIds() {
+      if (!S().handoffUrl) return null;
+      return await http(S().handoffUrl, { method: 'GET', headers: headers() });
+    },
+
+    // ---------------------------------------------------------------
     // Chatbot on/off (activar/desactivar su workflow en n8n)
     // ---------------------------------------------------------------
     async getBotState() {

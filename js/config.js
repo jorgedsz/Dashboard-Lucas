@@ -25,6 +25,9 @@ window.WA_CONFIG = {
   botStateUrl: 'https://n8n.lmconsultingai.com/webhook/wa-bot-state',
   botSetUrl:   'https://n8n.lmconsultingai.com/webhook/wa-bot-set',
 
+  // Handoff: contactos con etiqueta "handoff" en GHL
+  handoffUrl:  'https://n8n.lmconsultingai.com/webhook/wa-handoff',
+
   // Sondeo de novedades (ms). 0 = desactivado.
   pollInterval: 10000,
 

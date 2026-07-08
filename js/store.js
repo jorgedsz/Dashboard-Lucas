@@ -20,6 +20,7 @@
     ghlNameUrl: cfg.ghlNameUrl || '',  // GET   -> nombre del contacto en GHL (liviano)
     botStateUrl: cfg.botStateUrl || '',// GET   -> estado del chatbot (activo/inactivo)
     botSetUrl: cfg.botSetUrl || '',    // POST  -> prender/apagar el chatbot
+    handoffUrl: cfg.handoffUrl || '',  // GET   -> contactIds con etiqueta handoff en GHL
     pollInterval: cfg.pollInterval != null ? cfg.pollInterval : 10000, // ms; 0 = desactivado
     token: ''                          // header opcional x-dashboard-token
   };
@@ -44,6 +45,7 @@
     messagesByConv: {},
     ghlByContact: {},     // cache de datos completos de GHL por contactId (sesión)
     nameByContact: {},    // cache de nombre GHL por contactId (liviano)
+    handoffIds: new Set(),// contactIds con etiqueta handoff (GHL)
     templates: cfg.templates || [],
     activeId: null,
     filter: 'all',       // all | unread | starred
@@ -83,6 +85,7 @@
       let list = this.conversations.slice();
       if (this.filter === 'unread')  list = list.filter(c => c.unreadCount > 0);
       if (this.filter === 'starred') list = list.filter(c => c.starred);
+      if (this.filter === 'handoff') list = list.filter(c => c.contactId && this.handoffIds.has(c.contactId));
       if (this.search) {
         const q = this.search.toLowerCase();
         list = list.filter(c =>

@@ -17,6 +17,7 @@
       this.bindEvents();
       this.startPolling();
       this.loadBotState();
+      this.loadHandoff();
     },
 
     // ---------- tema claro / oscuro ----------
@@ -52,6 +53,22 @@
         UI.renderBotToggle(this._botActive);
         UI.toast('No se pudo cambiar el chatbot');
       }
+    },
+
+    // ---------- handoff (contactos con etiqueta handoff en GHL) ----------
+    async loadHandoff(force) {
+      if (!Store.settings.handoffUrl) return;
+      const now = Date.now();
+      if (!force && this._handoffAt && now - this._handoffAt < 25000) return; // throttle ~25s
+      this._handoffAt = now;
+      try {
+        const d = await Api.getHandoffIds();
+        const ids = new Set((d && d.contactIds) || []);
+        const changed = ids.size !== Store.handoffIds.size || [...ids].some(x => !Store.handoffIds.has(x));
+        Store.handoffIds = ids;
+        UI.renderHandoffCount(ids.size);
+        if (changed) UI.renderList();
+      } catch (_) {}
     },
 
     // ---------- carga / recarga de datos ----------
@@ -332,7 +349,7 @@
       if (this._lamePromise) return this._lamePromise;
       this._lamePromise = new Promise((resolve, reject) => {
         const s = document.createElement('script');
-        s.src = 'js/vendor/lame.all.js?v=15';
+        s.src = 'js/vendor/lame.all.js?v=16';
         s.onload = () => resolve();
         s.onerror = () => reject(new Error('encoder MP3 no disponible'));
         document.head.appendChild(s);
@@ -397,6 +414,7 @@
     },
 
     async pollOnce() {
+      this.loadHandoff(); // se auto-throttlea (~25s)
       const res = await Api.poll();
       if (!res || !res.conversations) return;
       const convs = res.conversations;
@@ -474,6 +492,7 @@
         t.classList.add('tab--active');
         Store.filter = t.dataset.filter;
         UI.renderList();
+        if (Store.filter === 'handoff') this.loadHandoff(true); // refresca al entrar
       }));
       // composer: autoexpandir
       const input = $('#msgInput');
